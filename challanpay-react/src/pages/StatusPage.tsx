@@ -33,7 +33,6 @@ const MOCK_CHALLANS: Challan[] = [
   { id: '4', challanNumber: 'DL08838230627114378', amount: 2500, violation: 'Improper Parking', date: '11 Sep 2023', location: 'Connaught Place, New Delhi', type: 'online', pendingSince: '20 months', premiumEligible: true },
   { id: '5', challanNumber: 'UP16838230627114379', amount: 10000, violation: 'Driving under the influence of alcohol exceeding permissible blood-alcohol concentration limits', date: '22 Oct 2023', location: 'Greater Noida Expressway, near Pari Chowk', type: 'court', pendingSince: '19 months' },
   { id: '6', challanNumber: 'HR26838230627114380', amount: 1500, violation: 'Without Seatbelt', date: '05 Nov 2023', location: 'NH-8, Manesar', type: 'online', pendingSince: '18 months' },
-  { id: '7', challanNumber: 'DL07838230627114381', amount: 0, violation: 'Vehicle fitness certificate expired', date: '12 Dec 2023', location: 'Rohini, New Delhi', type: 'online', pendingSince: '17 months', premiumEligible: true },
 ]
 
 const MOCK_PAID_CHALLANS: PaidChallan[] = [

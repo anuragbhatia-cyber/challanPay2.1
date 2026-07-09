@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
-import { Zap, Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check } from 'lucide-react'
+import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { Skeleton } from '@/components/shared/Skeleton'
@@ -14,7 +14,7 @@ import {
   useChallanStore,
   ONLINE_CONVENIENCE_FEE,
   COURT_CONVENIENCE_FEE,
-  PREMIUM_COURT_CONVENIENCE_FEE,
+  EXPRESS_FEE,
   PLEDGE_REWARD,
   type ResolutionMethod,
 } from '@/stores/challanStore'
@@ -50,11 +50,7 @@ export function PaymentPage() {
     const courtFee = court.length * COURT_CONVENIENCE_FEE
     const subtotal = onlineAmount + courtAmount + onlineFee + courtFee
 
-    // Premium is available whenever at least one selected challan benefits from it
-    // (any premium-eligible online OR any court challan, which is Pay-Later in Premium).
     const premiumAvailableCount = selectedChallans.filter((c) => c.premiumEligible || c.type === 'court').length
-    // Only court challan amounts are deferred to Pay Later; online amounts are paid now (like Regular).
-    const premiumDeferredAmount = courtAmount
 
     return {
       onlineCount: online.length,
@@ -63,9 +59,9 @@ export function PaymentPage() {
       courtAmount,
       onlineFee,
       courtFee,
+      expressFee: 0,
       subtotal,
       premiumAvailableCount,
-      premiumDeferredAmount,
     }
   }, [selectedChallans])
 
@@ -74,14 +70,11 @@ export function PaymentPage() {
 
   const displaySummary = useMemo(() => {
     if (!isPremium) return summary
-    // In Premium, all selected online challans are still paid now at the regular rate;
-    // only court challans get the Premium treatment (Pay-Later + higher convenience fee).
-    const courtFee = summary.courtCount * PREMIUM_COURT_CONVENIENCE_FEE
+    const expressFee = summary.courtCount * EXPRESS_FEE
     return {
       ...summary,
-      courtFee,
-      subtotal: summary.onlineAmount + summary.courtAmount + summary.onlineFee + courtFee,
-      premiumDeferredAmount: summary.courtAmount,
+      expressFee,
+      subtotal: summary.subtotal + expressFee,
     }
   }, [summary, isPremium])
 
@@ -89,18 +82,9 @@ export function PaymentPage() {
   const [showBackConfirm, setShowBackConfirm] = useState(false)
   const [legalChargesInfo, setLegalChargesInfo] = useState<'online' | 'court' | null>(null)
   const [showMoreBenefits, setShowMoreBenefits] = useState(false)
-  const [payNowDiscount, setPayNowDiscount] = useState(false)
 
   const pledgeActive = pledgeChecked && !isPremium
-  const premiumPayNowActive = isPremium && payNowDiscount
-  const premiumSavings = premiumPayNowActive ? Math.round(displaySummary.subtotal * 0.1) : 0
-  const payNowSubtotal = isPremium
-    ? premiumPayNowActive
-      ? displaySummary.subtotal - premiumSavings
-      : displaySummary.subtotal - displaySummary.premiumDeferredAmount
-    : displaySummary.subtotal
-  const payNowTotal = pledgeActive ? Math.max(0, payNowSubtotal - PLEDGE_REWARD) : payNowSubtotal
-  const payLaterTotal = isPremium && !premiumPayNowActive ? displaySummary.premiumDeferredAmount : 0
+  const payNowTotal = pledgeActive ? Math.max(0, displaySummary.subtotal - PLEDGE_REWARD) : displaySummary.subtotal
   const selectedCount = selectedChallanIds.length
 
   useModalA11y(legalChargesInfo !== null, () => setLegalChargesInfo(null))
@@ -391,9 +375,8 @@ export function PaymentPage() {
                               </span>
                             ) : (
                               !option.disabled && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                                  <Zap className="w-2.5 h-2.5" aria-hidden />
-                                  {t.payment.payLaterTag}
+                                <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                                  {t.payment.expressTag}
                                 </span>
                               )
                             )}
@@ -499,12 +482,10 @@ export function PaymentPage() {
                 ))}
               </div>
             ) : (
-              <div className="bg-white rounded-xl border border-border shadow-sm p-4 sm:p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="font-display font-semibold text-sm text-text-primary">
-                    {`${selectedCount} ${t.payment.selectedChallansTitle}`}
-                  </p>
-                </div>
+              <div className="bg-white rounded-xl border border-border shadow-sm p-5 sm:p-6">
+                <p className="font-display font-semibold text-sm text-text-light mb-4">
+                  {`${selectedCount} ${t.payment.selectedChallansTitle}`}
+                </p>
                 {(() => {
                   const courtList = selectedChallans.filter((c) => c.type === 'court')
                   const onlineList = selectedChallans.filter((c) => c.type === 'online')
@@ -515,63 +496,63 @@ export function PaymentPage() {
                         key={c.id}
                         className={cn('py-2.5 first:pt-0 last:pb-0', premiumOnly && 'opacity-60')}
                       >
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-mono text-xs text-text-primary tabular-nums">
+                              <span className="font-mono text-xs text-text-light tabular-nums">
                                 {idx + 1}.
                               </span>
-                              <span className="font-mono text-xs text-text-primary">
+                              <span className="font-mono text-sm text-text-primary">
                                 #{c.challanNumber}
                               </span>
-                              {!premiumOnly && c.amount > 0 && (
-                                <span
-                                  className={cn(
-                                    'text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap',
-                                    c.type === 'court'
-                                      ? 'bg-rose-100 text-rose-800'
-                                      : 'bg-sky-100 text-sky-800'
-                                  )}
-                                >
-                                  {c.type === 'court' ? t.payment.courtTag : t.payment.onlineTag}
-                                </span>
-                              )}
                             </div>
                           </div>
-                          {premiumOnly ? (
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
-                              {t.payment.eligibleForPremium}
-                            </span>
-                          ) : (
-                            <span className="font-display font-semibold text-sm text-text-primary whitespace-nowrap">
-                              ₹{formatINR(c.amount)}
-                            </span>
-                          )}
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            {premiumOnly ? (
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
+                                {t.payment.eligibleForPremium}
+                              </span>
+                            ) : (
+                              <span className="font-display font-semibold text-sm whitespace-nowrap text-text-primary">
+                                ₹{formatINR(c.amount)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </li>
                     )
                   }
                   return (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       {courtList.length > 0 && (
-                        <div>
-                          <p className="font-display font-semibold text-xs tracking-normal text-rose-800 mb-1.5">
-                            {`${t.payment.courtChallans} (${courtList.length})`}
-                          </p>
+                        <section>
+                          <div className="flex items-baseline gap-2.5 mb-2.5">
+                            <h4 className="font-display font-bold text-base sm:text-lg text-rose-800">
+                              {t.payment.courtChallans}
+                            </h4>
+                            <span className="font-display font-bold text-base sm:text-lg text-rose-800/70 tabular-nums">
+                              {courtList.length}
+                            </span>
+                          </div>
                           <ul className="divide-y divide-border/60">
                             {courtList.map((c, idx) => renderRow(c, idx))}
                           </ul>
-                        </div>
+                        </section>
                       )}
                       {onlineList.length > 0 && (
-                        <div>
-                          <p className="font-display font-semibold text-xs tracking-normal text-sky-800 mb-1.5">
-                            {`${t.payment.onlineChallans} (${onlineList.length})`}
-                          </p>
+                        <section>
+                          <div className="flex items-baseline gap-2.5 mb-2.5">
+                            <h4 className="font-display font-bold text-base sm:text-lg text-sky-800">
+                              {t.payment.onlineChallans}
+                            </h4>
+                            <span className="font-display font-bold text-base sm:text-lg text-sky-800/70 tabular-nums">
+                              {onlineList.length}
+                            </span>
+                          </div>
                           <ul className="divide-y divide-border/60">
                             {onlineList.map((c, idx) => renderRow(c, idx))}
                           </ul>
-                        </div>
+                        </section>
                       )}
                     </div>
                   )
@@ -611,11 +592,11 @@ export function PaymentPage() {
               </label>
 
               {/* Reward Info */}
-              <div className="mt-4 flex items-center gap-3 bg-gradient-to-r from-amber-100 via-amber-50 to-white rounded-lg p-3">
-                <Gift className="w-5 h-5 text-amber-700 flex-shrink-0" />
+              <div className="mt-4 flex items-center gap-3 bg-gradient-to-r from-amber-100 via-amber-50 to-white rounded-lg p-3.5">
+                <Gift className="w-6 h-6 text-amber-700 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-bold text-amber-700">{t.payment.rewardAmount}</p>
-                  <p className="text-xs text-text-light">{t.payment.rewardApplied}</p>
+                  <p className="font-display text-base sm:text-lg font-bold text-amber-700 leading-tight">{t.payment.rewardAmount}</p>
+                  <p className="text-xs text-text-light mt-0.5">{t.payment.rewardApplied}</p>
                 </div>
               </div>
             </div>
@@ -658,7 +639,6 @@ export function PaymentPage() {
               <SummaryBreakdown
                 summary={displaySummary}
                 isPremium={isPremium}
-                courtDeferred={isPremium && !premiumPayNowActive}
                 t={t}
                 onOnlineFeeInfo={() => setLegalChargesInfo('online')}
                 onCourtFeeInfo={() => setLegalChargesInfo('court')}
@@ -672,15 +652,6 @@ export function PaymentPage() {
                 </div>
               )}
 
-              {/* 10% Pay-now discount */}
-              {premiumPayNowActive && (
-                <div className="flex justify-between text-sm mt-3.5 bg-emerald-50 -mx-6 px-6 py-2.5">
-                  <span className="font-display font-semibold text-success">10% Discount Applied</span>
-                  <span className="font-display font-semibold text-success">-₹{formatINR(premiumSavings)}</span>
-                </div>
-              )}
-
-              {/* Pay Now / Pay Later totals */}
               <hr className="border-border my-3.5" />
               <div className="flex justify-between items-baseline">
                 <span className="font-display text-[15px] font-bold text-text-primary">
@@ -699,15 +670,6 @@ export function PaymentPage() {
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
               </button>
-
-              {isPremium && (
-                <PayNowDiscountToggle
-                  enabled={payNowDiscount}
-                  onToggle={() => setPayNowDiscount((v) => !v)}
-                  savings={premiumSavings}
-                  helpText={t.payment.payLaterHelp}
-                />
-              )}
             </div>
             )}
           </div>
@@ -732,11 +694,6 @@ export function PaymentPage() {
               <p className="font-display text-lg font-bold text-text-primary">
                 ₹{formatINR(payNowTotal)}
               </p>
-              {isPremium && premiumPayNowActive ? (
-                <p className="text-[10px] text-emerald-700 font-medium">{`You save ₹${formatINR(premiumSavings)}`}</p>
-              ) : isPremium ? (
-                <p className="text-[10px] text-amber-700 font-medium">{`+ ₹${formatINR(payLaterTotal)} ${t.payment.payLater}`}</p>
-              ) : null}
               {pledgeActive && (
                 <p className="text-[10px] text-success font-medium">{t.payment.savedAmount}</p>
               )}
@@ -782,7 +739,6 @@ export function PaymentPage() {
             <SummaryBreakdown
               summary={displaySummary}
               isPremium={isPremium}
-              courtDeferred={isPremium && !premiumPayNowActive}
               t={t}
               onOnlineFeeInfo={() => setLegalChargesInfo('online')}
               onCourtFeeInfo={() => setLegalChargesInfo('court')}
@@ -795,13 +751,6 @@ export function PaymentPage() {
               </div>
             )}
 
-            {premiumPayNowActive && (
-              <div className="flex justify-between text-sm bg-emerald-50 -mx-4 px-4 py-2.5">
-                <span className="font-display font-semibold text-success">10% Discount Applied</span>
-                <span className="font-display font-semibold text-success">-₹{formatINR(premiumSavings)}</span>
-              </div>
-            )}
-
             <hr className="border-border" />
             <div className="flex justify-between items-baseline">
               <span className="font-display text-sm font-bold text-text-primary">
@@ -811,78 +760,11 @@ export function PaymentPage() {
                 ₹{formatINR(payNowTotal)}
               </span>
             </div>
-            {isPremium && (
-              <PayNowDiscountToggle
-                enabled={payNowDiscount}
-                onToggle={() => setPayNowDiscount((v) => !v)}
-                savings={premiumSavings}
-                helpText={t.payment.payLaterHelp}
-              />
-            )}
           </div>
         </details>
         )}
       </div>
     </PageTransition>
-  )
-}
-
-type PayNowDiscountToggleProps = {
-  enabled: boolean
-  onToggle: () => void
-  savings: number
-  helpText: string
-}
-
-function PayNowDiscountToggle({ enabled, onToggle, savings, helpText }: PayNowDiscountToggleProps) {
-  return (
-    <div
-      className={cn(
-        'mt-5 rounded-lg px-3 py-2.5 transition-colors',
-        enabled ? 'bg-emerald-50/70' : 'bg-amber-50/70'
-      )}
-    >
-      <div className="flex items-start gap-3">
-        <div className="flex-1 min-w-0">
-          <p
-            className={cn(
-              'font-display text-sm font-semibold leading-snug',
-              enabled ? 'text-emerald-800' : 'text-amber-800'
-            )}
-          >
-            {enabled ? 'Pay upfront and save 10% of total amount' : 'Pay later'}
-          </p>
-          <p
-            className={cn(
-              'text-[11px] mt-0.5',
-              enabled ? 'text-emerald-700/80' : 'text-amber-700/80'
-            )}
-          >
-            {enabled
-              ? `You save ₹${formatINR(savings)} by paying upfront`
-              : helpText}
-          </p>
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={enabled}
-          aria-label="Pay upfront and save 10%"
-          onClick={onToggle}
-          className={cn(
-            'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors mt-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-primary',
-            enabled ? 'bg-emerald-600' : 'bg-gray-300'
-          )}
-        >
-          <span
-            className={cn(
-              'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform',
-              enabled ? 'translate-x-6' : 'translate-x-1'
-            )}
-          />
-        </button>
-      </div>
-    </div>
   )
 }
 
@@ -894,16 +776,15 @@ type SummaryBreakdownProps = {
     courtAmount: number
     onlineFee: number
     courtFee: number
-    premiumDeferredAmount: number
+    expressFee: number
   }
   isPremium: boolean
-  courtDeferred: boolean
   t: ReturnType<typeof useTranslation>['t']
   onOnlineFeeInfo: () => void
   onCourtFeeInfo: () => void
 }
 
-function SummaryBreakdown({ summary, isPremium, courtDeferred, t, onOnlineFeeInfo, onCourtFeeInfo }: SummaryBreakdownProps) {
+function SummaryBreakdown({ summary, isPremium, t, onOnlineFeeInfo, onCourtFeeInfo }: SummaryBreakdownProps) {
   return (
     <div className="space-y-3.5">
       {/* Online Challan */}
@@ -940,15 +821,14 @@ function SummaryBreakdown({ summary, isPremium, courtDeferred, t, onOnlineFeeInf
           <div className="flex justify-between text-[13px]">
             <span className="font-display font-semibold text-text-primary">
               {`${t.payment.courtChallan} (${summary.courtCount})`}
-              {courtDeferred && <span className="ml-1.5 text-[11px] font-normal text-amber-700/90">· {t.payment.payLater}</span>}
             </span>
-            <span className={cn('font-display font-semibold', courtDeferred ? 'text-amber-700/90' : 'text-text-primary')}>
+            <span className="font-display font-semibold text-text-primary">
               ₹{formatINR(summary.courtAmount)}
             </span>
           </div>
           <div className="flex justify-between text-[13px]">
             <span className="text-text-light inline-flex items-center gap-1">
-              {t.payment.convenienceFee} <span className="text-text-light/70">{`(${summary.courtCount} x ${isPremium ? PREMIUM_COURT_CONVENIENCE_FEE : COURT_CONVENIENCE_FEE})`}</span>
+              {t.payment.convenienceFee} <span className="text-text-light/70">{`(${summary.courtCount} x ${COURT_CONVENIENCE_FEE})`}</span>
               <button
                 type="button"
                 onClick={onCourtFeeInfo}
@@ -960,6 +840,14 @@ function SummaryBreakdown({ summary, isPremium, courtDeferred, t, onOnlineFeeInf
             </span>
             <span className="font-medium text-text-light">₹{formatINR(summary.courtFee)}</span>
           </div>
+          {isPremium && (
+            <div className="flex justify-between text-[13px]">
+              <span className="text-text-light">
+                {t.payment.expressFee} <span className="text-text-light/70">{`(${summary.courtCount} x ${EXPRESS_FEE})`}</span>
+              </span>
+              <span className="font-medium text-text-light">₹{formatINR(summary.expressFee)}</span>
+            </div>
+          )}
         </div>
       )}
     </div>

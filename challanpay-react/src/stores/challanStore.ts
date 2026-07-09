@@ -17,7 +17,7 @@ export type ResolutionMethod = 'regular' | 'premium'
 
 export const ONLINE_CONVENIENCE_FEE = 200
 export const COURT_CONVENIENCE_FEE = 2000
-export const PREMIUM_COURT_CONVENIENCE_FEE = 3000
+export const EXPRESS_FEE = 1000
 export const PLEDGE_REWARD = 1000
 
 interface ChallanState {
@@ -78,7 +78,7 @@ export const useChallanStore = create<ChallanState>()(
     {
       name: 'challanpay-challans',
       storage: createJSONStorage(() => sessionStorage),
-      version: 2,
+      version: 3,
       migrate: (persisted: unknown, version: number) => {
         if (!persisted || typeof persisted !== 'object') return persisted as never
         const state = persisted as Record<string, unknown>
@@ -93,6 +93,14 @@ export const useChallanStore = create<ChallanState>()(
           if (Array.isArray(state.challans)) state.challans = state.challans.map(renameTatkalKey)
           if (Array.isArray(state.submittedChallans)) state.submittedChallans = state.submittedChallans.map(renameTatkalKey)
           if (state.resolutionMethod === 'tatkal') state.resolutionMethod = 'premium'
+        }
+        if (version < 3) {
+          const dropRetiredChallan = (list: unknown) =>
+            Array.isArray(list)
+              ? list.filter((c) => !(c && typeof c === 'object' && (c as Record<string, unknown>).challanNumber === 'DL07838230627114381'))
+              : list
+          state.challans = dropRetiredChallan(state.challans)
+          state.submittedChallans = dropRetiredChallan(state.submittedChallans)
         }
         return state as never
       },
