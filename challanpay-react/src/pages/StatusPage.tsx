@@ -260,24 +260,22 @@ export function StatusPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] gap-0 md:gap-6">
           {/* Sidebar */}
-          <aside className="md:sticky md:top-24 md:self-start md:min-h-[calc(100vh-7rem)] bg-white rounded-2xl rounded-t-none md:rounded-t-2xl border border-border border-t-0 md:border-t p-3">
-            <nav className="flex md:flex-col gap-2">
-              <div className="relative flex-1 md:flex-none">
+          <aside className="md:sticky md:top-24 md:self-start md:min-h-[calc(100vh-7rem)] bg-white rounded-2xl rounded-t-none md:rounded-t-2xl border border-border border-t-0 md:border-t p-2 md:p-3">
+            <nav className="flex md:flex-col gap-1.5 md:gap-2">
+              <div className="relative flex-1 md:flex-none min-w-0">
                 <button
                   onClick={() => setActiveTab('pending')}
                   className={cn(
-                    'w-full flex items-center justify-between px-4 py-3 md:py-5 rounded-xl text-sm md:text-base font-semibold border transition-all',
+                    'w-full min-w-0 flex items-center justify-between gap-1.5 md:gap-2.5 px-2.5 md:px-4 py-3 md:py-5 rounded-xl text-xs md:text-base font-semibold border transition-all',
                     activeTab === 'pending'
                       ? 'bg-primary/10 text-primary border-primary'
                       : 'bg-white border-border text-text-secondary hover:bg-gray-50'
                   )}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="hidden md:inline">{t.status.pendingChallans}</span>
-                    <span className="md:hidden">{t.status.pending}</span>
-                  </div>
+                  <span className="min-w-0 truncate hidden md:inline">{t.status.pendingChallans}</span>
+                  <span className="min-w-0 truncate md:hidden">{t.status.pending}</span>
                   <span className={cn(
-                    'text-xs font-bold px-2 py-0.5 rounded-full mr-7',
+                    'flex-shrink-0 text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 rounded-full md:mr-7',
                     activeTab === 'pending' ? 'bg-primary/15 text-primary' : 'bg-gray-100 text-text-secondary'
                   )}>
                     {allChallans.length}
@@ -287,27 +285,25 @@ export function StatusPage() {
                   type="button"
                   onClick={() => setTabInfo('pending')}
                   aria-label="About Pending Challans"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 inline-flex items-center justify-center rounded-full text-text-light hover:text-primary hover:bg-white/60 transition-colors cursor-pointer"
+                  className="hidden md:inline-flex absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 items-center justify-center rounded-full text-text-light hover:text-primary hover:bg-white/60 transition-colors cursor-pointer"
                 >
                   <Info className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <div className="relative flex-1 md:flex-none">
+              <div className="relative flex-1 md:flex-none min-w-0">
                 <button
                   onClick={() => setActiveTab('in-progress')}
                   className={cn(
-                    'w-full flex items-center justify-between px-4 py-3 md:py-5 rounded-xl text-sm md:text-base font-semibold border transition-all',
+                    'w-full min-w-0 flex items-center justify-between gap-1.5 md:gap-2.5 px-2.5 md:px-4 py-3 md:py-5 rounded-xl text-xs md:text-base font-semibold border transition-all',
                     activeTab === 'in-progress'
                       ? 'bg-amber-50 text-amber-700 border-amber-400'
                       : 'bg-white border-border text-text-secondary hover:bg-gray-50'
                   )}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="hidden md:inline">{t.status.inProgressChallans}</span>
-                    <span className="md:hidden">{t.status.inProgress}</span>
-                  </div>
+                  <span className="min-w-0 truncate hidden md:inline">{t.status.inProgressChallans}</span>
+                  <span className="min-w-0 truncate md:hidden">{t.status.inProgress}</span>
                   <span className={cn(
-                    'text-xs font-bold px-2 py-0.5 rounded-full mr-7',
+                    'flex-shrink-0 text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 rounded-full md:mr-7',
                     activeTab === 'in-progress' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-text-secondary'
                   )}>
                     {submittedChallans.length}
@@ -317,27 +313,25 @@ export function StatusPage() {
                   type="button"
                   onClick={() => setTabInfo('in-progress')}
                   aria-label="About InProgress Challans"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 inline-flex items-center justify-center rounded-full text-text-light hover:text-amber-700 hover:bg-white/60 transition-colors cursor-pointer"
+                  className="hidden md:inline-flex absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 items-center justify-center rounded-full text-text-light hover:text-amber-700 hover:bg-white/60 transition-colors cursor-pointer"
                 >
                   <Info className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <div className="relative flex-1 md:flex-none">
+              <div className="relative flex-1 md:flex-none min-w-0">
                 <button
                   onClick={() => setActiveTab('paid')}
                   className={cn(
-                    'w-full flex items-center justify-between px-4 py-3 md:py-5 rounded-xl text-sm md:text-base font-semibold border transition-all',
+                    'w-full min-w-0 flex items-center justify-between gap-1.5 md:gap-2.5 px-2.5 md:px-4 py-3 md:py-5 rounded-xl text-xs md:text-base font-semibold border transition-all',
                     activeTab === 'paid'
                       ? 'bg-success/10 text-success border-success'
                       : 'bg-white border-border text-text-secondary hover:bg-gray-50'
                   )}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="hidden md:inline">{t.status.paidChallans}</span>
-                    <span className="md:hidden">{t.status.paid}</span>
-                  </div>
+                  <span className="min-w-0 truncate hidden md:inline">{t.status.paidChallans}</span>
+                  <span className="min-w-0 truncate md:hidden">{t.status.paid}</span>
                   <span className={cn(
-                    'text-xs font-bold px-2 py-0.5 rounded-full mr-7',
+                    'flex-shrink-0 text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 rounded-full md:mr-7',
                     activeTab === 'paid' ? 'bg-success/15 text-success' : 'bg-gray-100 text-text-secondary'
                   )}>8</span>
                 </button>
@@ -345,7 +339,7 @@ export function StatusPage() {
                   type="button"
                   onClick={() => setTabInfo('paid')}
                   aria-label="About Paid Challans"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 inline-flex items-center justify-center rounded-full text-text-light hover:text-success hover:bg-white/60 transition-colors cursor-pointer"
+                  className="hidden md:inline-flex absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 items-center justify-center rounded-full text-text-light hover:text-success hover:bg-white/60 transition-colors cursor-pointer"
                 >
                   <Info className="w-3.5 h-3.5" />
                 </button>

@@ -121,8 +121,8 @@ function LoginSection({ onSuccess }: { onSuccess: (name: string, mobile: string)
   }
 
   return (
-    <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
+    <div className="px-4 py-4 md:min-h-[calc(100vh-5rem)] md:flex md:items-center md:justify-center md:py-8">
+      <div className="w-full max-w-md mx-auto">
 
         <AnimatePresence mode="wait">
           {step === 'details' && (

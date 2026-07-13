@@ -183,7 +183,28 @@ export function Header() {
 
     {/* Mobile fullscreen menu - outside header to avoid clipping */}
     {isMobileMenuOpen && (
-      <nav className="md:hidden fixed inset-0 top-20 bg-white z-[70] overflow-y-auto">
+      <nav className="md:hidden fixed inset-0 bg-white z-[70] overflow-y-auto">
+        {/* Menu header mirroring the app header so the logo isn't clipped by the overlay */}
+        <div className="flex items-center justify-between h-20 px-6">
+          <Link
+            to={isRSPPage ? '/road-smart-partners' : '/'}
+            className="flex-shrink-0"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <img
+              src={isRSPPage ? '/images/rsp-logo.webp' : '/images/logo.png'}
+              alt={isRSPPage ? 'Road Smart Partner Logo' : 'ChallanPay Logo'}
+              className="h-8 w-auto"
+            />
+          </Link>
+          <button
+            className="p-3 min-w-11 min-h-11 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center"
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="Close menu"
+          >
+            <X className="w-6 h-6 text-text-primary" />
+          </button>
+        </div>
         <ul className="px-4 py-4 space-y-1">
           {NAV_LINKS.map((link) => (
             <li key={link.href}>
@@ -226,22 +247,22 @@ export function Header() {
 
         {/* Mobile User Profile */}
         <div className="px-4 pb-4 pt-2 border-t border-border">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <span className="text-lg font-medium text-text-primary">{userName || t.header.login}</span>
-          </div>
-          <Link
-            to="/track-status"
-            className="flex items-center gap-3 px-4 py-3.5 min-h-11 text-lg font-medium text-text-primary hover:bg-gray-50 rounded-lg transition-colors"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <Calendar className="w-5 h-5" />
-            {t.header.trackMyChallans}
-          </Link>
-          {userName && (
+          {userName ? (
             <>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-lg font-medium text-text-primary">{userName}</span>
+              </div>
+              <Link
+                to="/track-status"
+                className="flex items-center gap-3 px-4 py-3.5 min-h-11 text-lg font-medium text-text-primary hover:bg-gray-50 rounded-lg transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Calendar className="w-5 h-5" />
+                {t.header.trackMyChallans}
+              </Link>
               <Link
                 to="/profile"
                 className="flex items-center gap-3 px-4 py-3.5 min-h-11 text-lg font-medium text-text-primary hover:bg-gray-50 rounded-lg transition-colors"
@@ -258,6 +279,15 @@ export function Header() {
                 {t.header.logout}
               </button>
             </>
+          ) : (
+            <Link
+              to="/track-status"
+              className="flex items-center gap-3 px-4 py-3.5 min-h-11 text-lg font-medium text-text-primary hover:bg-gray-50 rounded-lg transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <User className="w-5 h-5" />
+              {t.header.login}
+            </Link>
           )}
         </div>
       </nav>
