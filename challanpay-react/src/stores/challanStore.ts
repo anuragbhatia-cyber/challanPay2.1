@@ -11,6 +11,7 @@ export interface ChallanItem {
   type: 'online' | 'court'
   pendingSince?: string
   premiumEligible?: boolean
+  expressEligible?: boolean
 }
 
 export type ResolutionMethod = 'regular' | 'premium'

@@ -31,7 +31,7 @@ const MOCK_CHALLANS: Challan[] = [
   { id: '2', challanNumber: 'DL01234567890123456', amount: 5000, violation: 'Disobedience of any direction or obstruction of any function by a driver', date: '15 Jul 2023', location: 'Outer Ring Road, near Dhaula Kuan, New Delhi', type: 'court', pendingSince: '23 months' },
   { id: '3', challanNumber: 'HR26838230627114377', amount: 1000, violation: 'No Helmet', date: '03 Aug 2023', location: 'Sector 29 Market, Gurugram', type: 'online', pendingSince: '22 months', premiumEligible: true },
   { id: '4', challanNumber: 'DL08838230627114378', amount: 2500, violation: 'Improper Parking', date: '11 Sep 2023', location: 'Connaught Place, New Delhi', type: 'online', pendingSince: '20 months', premiumEligible: true },
-  { id: '5', challanNumber: 'UP16838230627114379', amount: 10000, violation: 'Driving under the influence of alcohol exceeding permissible blood-alcohol concentration limits', date: '22 Oct 2023', location: 'Greater Noida Expressway, near Pari Chowk', type: 'court', pendingSince: '19 months' },
+  { id: '5', challanNumber: 'UP16838230627114379', amount: 10000, violation: 'Driving under the influence of alcohol exceeding permissible blood-alcohol concentration limits', date: '22 Oct 2023', location: 'Greater Noida Expressway, near Pari Chowk', type: 'court', pendingSince: '19 months', expressEligible: false },
   { id: '6', challanNumber: 'HR26838230627114380', amount: 1500, violation: 'Without Seatbelt', date: '05 Nov 2023', location: 'NH-8, Manesar', type: 'online', pendingSince: '18 months' },
   { id: '7', challanNumber: 'DL03838230627114381', amount: 0, violation: 'Signal Jump', date: '12 Dec 2023', location: 'ITO Junction, New Delhi', type: 'online', pendingSince: '17 months', disabled: true },
 ]
@@ -598,11 +598,8 @@ export function StatusPage() {
                 {state !== 'loading' && selectedIds.length > 0 && (
               <div className="fixed md:sticky bottom-0 md:bottom-4 left-0 right-0 md:left-auto md:right-auto z-50 md:z-40 bg-white border-t border-border md:border md:rounded-2xl rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:shadow-xl overflow-hidden animate-slide-down">
                 {/* Pledge & Claim Rewards banner */}
-                <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-amber-100 via-amber-50 to-white border-b border-amber-100">
-                  <span className="text-sm font-semibold text-amber-700">{t.status.pledgeAndClaimRewards}</span>
-                  <svg className="w-7 h-7 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
-                  </svg>
+                <div className="px-4 py-2.5 bg-gradient-to-r from-amber-100 via-amber-50 to-white border-b border-amber-100">
+                  <p className="text-sm font-semibold text-amber-700 leading-snug">{t.status.pledgeAndClaimRewards}</p>
                 </div>
                 <div className="px-4 py-3 flex items-center justify-between gap-4">
                   <div className="min-w-0">

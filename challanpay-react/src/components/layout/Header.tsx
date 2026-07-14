@@ -55,24 +55,26 @@ export function Header() {
           />
         </Link>
 
-        {/* Desktop Nav Links */}
-        <ul className="hidden md:flex items-center gap-6">
-          {NAV_LINKS.map((link) => (
-            <li key={link.href}>
-              <Link
-                to={link.href}
-                className="text-base font-medium text-text-primary hover:text-primary transition-colors flex items-center gap-1.5"
-              >
-                {link.label}
-                {link.badge && (
-                  <span className="text-[10px] font-bold bg-gradient-to-br from-emerald-500 to-emerald-600 text-white px-1.5 py-0.5 rounded leading-none">
-                    {link.badge}
-                  </span>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {/* Desktop Nav Links — hidden when logged in */}
+        {!userName && (
+          <ul className="hidden md:flex items-center gap-6">
+            {NAV_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link
+                  to={link.href}
+                  className="text-base font-medium text-text-primary hover:text-primary transition-colors flex items-center gap-1.5"
+                >
+                  {link.label}
+                  {link.badge && (
+                    <span className="text-[10px] font-bold bg-gradient-to-br from-emerald-500 to-emerald-600 text-white px-1.5 py-0.5 rounded leading-none">
+                      {link.badge}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
 
         {/* Right side: Language + Profile */}
         <div className="hidden md:flex items-center gap-3">

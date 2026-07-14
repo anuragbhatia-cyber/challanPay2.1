@@ -70,21 +70,26 @@ export function PaymentPage() {
 
   const displaySummary = useMemo(() => {
     if (!isPremium) return summary
-    // Express: exclude online challans/fees; flat convenience fee on court challans only; no express fee.
+    // Express: exclude online challans/fees + court challans marked ineligible;
+    // flat convenience fee on eligible court challans; no per-challan express fee.
+    const eligibleCourt = selectedChallans.filter((c) => c.type === 'court' && c.expressEligible !== false)
+    const eligibleCourtAmount = eligibleCourt.reduce((sum, c) => sum + c.amount, 0)
+    const eligibleCourtCount = eligibleCourt.length
     return {
       ...summary,
       onlineAmount: 0,
       onlineFee: 0,
-      courtFee: summary.courtCount > 0 ? EXPRESS_CONVENIENCE_FEE : 0,
+      courtCount: eligibleCourtCount,
+      courtAmount: eligibleCourtAmount,
+      courtFee: eligibleCourtCount > 0 ? EXPRESS_CONVENIENCE_FEE : 0,
       expressFee: 0,
-      subtotal: summary.courtAmount + (summary.courtCount > 0 ? EXPRESS_CONVENIENCE_FEE : 0),
+      subtotal: eligibleCourtAmount + (eligibleCourtCount > 0 ? EXPRESS_CONVENIENCE_FEE : 0),
     }
-  }, [summary, isPremium])
+  }, [summary, isPremium, selectedChallans])
 
   const [pledgeChecked, setPledgeChecked] = useState(false)
   const [showBackConfirm, setShowBackConfirm] = useState(false)
   const [legalChargesInfo, setLegalChargesInfo] = useState<'online' | 'court' | null>(null)
-  const [showMoreBenefits, setShowMoreBenefits] = useState(false)
 
   const pledgeActive = pledgeChecked && !isPremium
   const payNowTotal = pledgeActive ? Math.max(0, displaySummary.subtotal - PLEDGE_REWARD) : displaySummary.subtotal
@@ -427,67 +432,20 @@ export function PaymentPage() {
                       </div>
                     </div>
 
-                    <div className="px-4 sm:px-5 pb-4">
-                      <ul className="grid grid-cols-2 gap-2.5">
-                        {activeOption.benefits.map((benefit, i) => (
-                          <li
-                            key={benefit}
-                            className={cn(
-                              'flex items-center gap-2.5 rounded-lg px-3 py-2.5',
-                              activeOption.id === 'regular' ? 'bg-emerald-50/70' : 'bg-amber-50/70',
-                              i >= 2 && !showMoreBenefits && 'hidden lg:flex'
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0',
-                                activeOption.id === 'regular' ? 'bg-emerald-100' : 'bg-amber-100'
-                              )}
-                            >
-                              <Check
-                                className={cn(
-                                  'w-3.5 h-3.5',
-                                  activeOption.id === 'regular' ? 'text-emerald-600' : 'text-amber-600'
-                                )}
-                                strokeWidth={3}
-                              />
-                            </span>
-                            <span className="text-sm font-medium text-text-primary">{benefit}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      {activeOption.benefits.length > 2 && (
-                        <div className="lg:hidden mt-2.5 flex justify-center">
-                          <button
-                            type="button"
-                            onClick={() => setShowMoreBenefits((v) => !v)}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-text-secondary hover:text-text-primary transition-colors"
-                          >
-                            {showMoreBenefits ? 'Show less' : 'More'}
-                            <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', showMoreBenefits && 'rotate-180')} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
 
                     {/* Pledge Section — Regular only */}
                     {activeOption.id === 'regular' && (
                       <div className="px-4 sm:px-5 pb-4 pt-1 border-t border-border/60">
-                        <label className="flex items-start gap-3 cursor-pointer mt-4">
+                        <label className="flex items-center justify-start gap-3 cursor-pointer mt-4">
                           <input
                             type="checkbox"
                             checked={pledgeChecked}
                             onChange={handlePledge}
-                            className="w-6 h-6 rounded border-primary text-primary accent-primary focus:ring-primary mt-0.5 flex-shrink-0"
+                            className="w-6 h-6 rounded border-primary text-primary accent-primary focus:ring-primary flex-shrink-0"
                           />
-                          <div>
-                            <p className="font-display font-semibold text-sm text-text-primary">
-                              {t.payment.pledgeTitle}
-                            </p>
-                            <p className="text-xs text-text-secondary mt-1">
-                              {t.payment.pledgeDesc}
-                            </p>
-                          </div>
+                          <p className="font-display font-medium text-base text-text-primary">
+                            {t.payment.pledgeTitle}
+                          </p>
                         </label>
 
                         {/* Reward Info */}
@@ -526,10 +484,12 @@ export function PaymentPage() {
                   const courtList = selectedChallans.filter((c) => c.type === 'court')
                   const renderRow = (c: typeof selectedChallans[number], idx: number) => {
                     const premiumOnly = !isPremium && c.amount === 0
+                    const notEligibleForExpress = isPremium && c.type === 'court' && c.expressEligible === false
+                    const muted = premiumOnly || notEligibleForExpress
                     return (
                       <li
                         key={c.id}
-                        className={cn('py-2.5 first:pt-0 last:pb-0', premiumOnly && 'opacity-60')}
+                        className={cn('py-2.5 first:pt-0 last:pb-0', muted && 'opacity-60')}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0 flex-1">
@@ -543,7 +503,11 @@ export function PaymentPage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0">
-                            {premiumOnly ? (
+                            {notEligibleForExpress ? (
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-text-light uppercase tracking-wide whitespace-nowrap">
+                                {t.payment.notEligible}
+                              </span>
+                            ) : premiumOnly ? (
                               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
                                 {t.payment.eligibleForPremium}
                               </span>
