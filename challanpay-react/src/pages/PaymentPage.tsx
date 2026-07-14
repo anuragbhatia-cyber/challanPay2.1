@@ -399,19 +399,19 @@ export function PaymentPage() {
                   >
                     <div
                       className={cn(
-                        'px-4 sm:px-5 pt-4 pb-3 flex items-start gap-3 sm:gap-4',
+                        'px-4 sm:px-5 py-4 flex items-start gap-3 sm:gap-4',
                         activeOption.id === 'regular'
                           ? 'bg-gradient-to-b from-cyan-50/70 to-white'
                           : 'bg-gradient-to-b from-amber-50/70 to-white'
                       )}
                     >
-                      <div className="-m-1 w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center flex-shrink-0">
-                        <img
-                          src={activeOption.iconSrc}
-                          alt=""
-                          aria-hidden
-                          className="w-full h-full object-contain"
-                        />
+                      <div
+                        className={cn(
+                          'w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0',
+                          activeOption.id === 'regular' ? 'bg-cyan-100 text-cyan-700' : 'bg-amber-100 text-amber-700'
+                        )}
+                      >
+                        <Info className="w-5 h-5" aria-hidden />
                       </div>
                       <div className="flex-1 min-w-0">
                         <h2 className="font-display font-bold text-base text-text-primary">
@@ -420,8 +420,6 @@ export function PaymentPage() {
                         <p className="text-sm text-text-secondary mt-1">{activeOption.description}</p>
                       </div>
                     </div>
-
-
                   </div>
 
                   {/* Pledge Card — Regular only, separate from resolution card */}
