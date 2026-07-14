@@ -1,6 +1,3 @@
-import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { ScrollReveal } from '@/components/shared/ScrollReveal'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -12,7 +9,6 @@ interface FAQItem {
 
 export function FAQPage() {
   const { t } = useTranslation()
-  const [openIndex, setOpenIndex] = useState<number | null>(0)
 
   const FAQS: FAQItem[] = [
     { question: t.faq.q1, answer: t.faq.a1 },
@@ -45,27 +41,13 @@ export function FAQPage() {
         <div className="space-y-3">
           {FAQS.map((faq, i) => (
             <ScrollReveal key={i} delay={i * 0.05}>
-              <div className="bg-white rounded-xl border border-border overflow-hidden">
-                <button
-                  onClick={() => setOpenIndex(openIndex === i ? null : i)}
-                  className="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <span className="font-display font-semibold text-sm text-text-primary pr-4">
-                    {faq.question}
-                  </span>
-                  <ChevronDown className={cn(
-                    'w-5 h-5 text-text-light flex-shrink-0 transition-transform',
-                    openIndex === i && 'rotate-180'
-                  )} />
-                </button>
-                <div className={cn(
-                  'overflow-hidden transition-all',
-                  openIndex === i ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'
-                )}>
-                  <p className="px-5 pb-5 text-sm text-text-secondary leading-relaxed">
-                    {faq.answer}
-                  </p>
-                </div>
+              <div className="bg-white rounded-xl border border-border p-5">
+                <h2 className="font-display font-semibold text-sm text-text-primary mb-2">
+                  {faq.question}
+                </h2>
+                <p className="text-sm text-text-secondary leading-relaxed">
+                  {faq.answer}
+                </p>
               </div>
             </ScrollReveal>
           ))}

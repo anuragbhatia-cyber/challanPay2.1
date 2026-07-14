@@ -18,6 +18,7 @@ export interface TrackingChallan {
   amount: number
   resolutionDate: string
   timeline: TimelineEntry[]
+  isExpress?: boolean
 }
 
 export interface VehicleInfo {

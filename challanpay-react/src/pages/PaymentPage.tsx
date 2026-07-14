@@ -117,6 +117,7 @@ export function PaymentPage() {
         t.payment.premiumBenefit1,
         t.payment.premiumBenefit2,
         t.payment.premiumBenefit3,
+        t.payment.premiumBenefit4,
       ],
       disabled: !hasPremiumEligible,
     },
@@ -487,8 +488,8 @@ export function PaymentPage() {
                   {`${selectedCount} ${t.payment.selectedChallansTitle}`}
                 </p>
                 {(() => {
-                  const courtList = selectedChallans.filter((c) => c.type === 'court')
                   const onlineList = selectedChallans.filter((c) => c.type === 'online')
+                  const courtList = selectedChallans.filter((c) => c.type === 'court')
                   const renderRow = (c: typeof selectedChallans[number], idx: number) => {
                     const premiumOnly = !isPremium && c.amount === 0
                     return (
@@ -524,6 +525,21 @@ export function PaymentPage() {
                   }
                   return (
                     <div className="space-y-6">
+                      {!isPremium && onlineList.length > 0 && (
+                        <section>
+                          <div className="flex items-baseline gap-2.5 mb-2.5">
+                            <h4 className="font-display font-bold text-base sm:text-lg text-cyan-700">
+                              {t.payment.onlineChallans}
+                            </h4>
+                            <span className="font-display font-bold text-base sm:text-lg text-cyan-700/70 tabular-nums">
+                              {onlineList.length}
+                            </span>
+                          </div>
+                          <ul className="divide-y divide-border/60">
+                            {onlineList.map((c, idx) => renderRow(c, idx))}
+                          </ul>
+                        </section>
+                      )}
                       {courtList.length > 0 && (
                         <section>
                           <div className="flex items-baseline gap-2.5 mb-2.5">
@@ -536,21 +552,6 @@ export function PaymentPage() {
                           </div>
                           <ul className="divide-y divide-border/60">
                             {courtList.map((c, idx) => renderRow(c, idx))}
-                          </ul>
-                        </section>
-                      )}
-                      {onlineList.length > 0 && (
-                        <section>
-                          <div className="flex items-baseline gap-2.5 mb-2.5">
-                            <h4 className="font-display font-bold text-base sm:text-lg text-sky-800">
-                              {t.payment.onlineChallans}
-                            </h4>
-                            <span className="font-display font-bold text-base sm:text-lg text-sky-800/70 tabular-nums">
-                              {onlineList.length}
-                            </span>
-                          </div>
-                          <ul className="divide-y divide-border/60">
-                            {onlineList.map((c, idx) => renderRow(c, idx))}
                           </ul>
                         </section>
                       )}

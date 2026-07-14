@@ -14,6 +14,7 @@ import {
   Shield,
   Plus,
   Info,
+  Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUserStore } from '@/stores/userStore'
@@ -526,9 +527,17 @@ function DashboardSection() {
                             className="bg-white rounded-xl border border-border shadow-sm p-5 hover:border-primary/30 hover:shadow-md transition-all"
                           >
                             <div className="flex items-center justify-between gap-2 mb-3">
-                              <p className="font-display font-bold text-sm text-text-primary truncate">
-                                {challan.challanNumber}
-                              </p>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <p className="font-display font-bold text-sm text-text-primary truncate">
+                                  {challan.challanNumber}
+                                </p>
+                                {challan.isExpress && (
+                                  <span className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                    <Zap className="w-2.5 h-2.5" aria-hidden />
+                                    Express
+                                  </span>
+                                )}
+                              </div>
                               {(() => {
                                 const StatusIcon = STATUS_BADGE[challan.status].icon
                                 return (

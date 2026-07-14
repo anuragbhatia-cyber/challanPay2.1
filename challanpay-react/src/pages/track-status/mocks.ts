@@ -10,6 +10,7 @@ export const MOCK_CHALLANS: TrackingChallan[] = [
     incidentId: 'IRN-4680065',
     amount: 0,
     resolutionDate: '20 Nov, 2024',
+    isExpress: true,
     timeline: [
       { date: '06 Nov, 02:22 PM', title: 'Challan Submitted', description: 'Your challan has been submitted for processing. Our team will review it shortly.' },
     ],
@@ -35,6 +36,7 @@ export const MOCK_CHALLANS: TrackingChallan[] = [
     incidentId: 'IRN-4679900',
     amount: 1000,
     resolutionDate: '25 Nov, 2024',
+    isExpress: true,
     timeline: [
       { date: '04 Nov, 09:15 AM', title: 'Challan Submitted', description: 'Your challan has been submitted for processing.' },
       { date: '04 Nov, 02:00 PM', title: 'Under Review', description: 'Challan is being reviewed by our resolution team.' },
