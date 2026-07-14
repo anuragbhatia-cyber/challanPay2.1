@@ -71,19 +71,20 @@ export function PaymentPage() {
   const displaySummary = useMemo(() => {
     if (!isPremium) return summary
     // Express: exclude online challans/fees + court challans marked ineligible;
-    // flat convenience fee on eligible court challans; no per-challan express fee.
+    // per-eligible-court convenience fee (n × EXPRESS_CONVENIENCE_FEE); no express fee row.
     const eligibleCourt = selectedChallans.filter((c) => c.type === 'court' && c.expressEligible !== false)
     const eligibleCourtAmount = eligibleCourt.reduce((sum, c) => sum + c.amount, 0)
     const eligibleCourtCount = eligibleCourt.length
+    const eligibleCourtFee = eligibleCourtCount * EXPRESS_CONVENIENCE_FEE
     return {
       ...summary,
       onlineAmount: 0,
       onlineFee: 0,
       courtCount: eligibleCourtCount,
       courtAmount: eligibleCourtAmount,
-      courtFee: eligibleCourtCount > 0 ? EXPRESS_CONVENIENCE_FEE : 0,
+      courtFee: eligibleCourtFee,
       expressFee: 0,
-      subtotal: eligibleCourtAmount + (eligibleCourtCount > 0 ? EXPRESS_CONVENIENCE_FEE : 0),
+      subtotal: eligibleCourtAmount + eligibleCourtFee,
     }
   }, [summary, isPremium, selectedChallans])
 
@@ -417,52 +418,11 @@ export function PaymentPage() {
                         <h2 className="font-display font-bold text-base text-text-primary">
                           {activeOption.infoTitle}
                         </h2>
-                        <p className="text-sm text-text-secondary mt-1">{activeOption.description}</p>
+                        <p className="text-sm text-text-primary/80 mt-1">{activeOption.description}</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Pledge Card — Regular only, separate from resolution card */}
-                  {activeOption.id === 'regular' && (
-                    <div className="animate-slide-down bg-white rounded-2xl overflow-hidden border border-border/60 p-4 sm:p-5">
-                      <label className="flex items-center justify-start gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={pledgeChecked}
-                          onChange={handlePledge}
-                          className="w-6 h-6 rounded border-primary text-primary accent-primary focus:ring-primary flex-shrink-0"
-                        />
-                        <p className="font-display font-medium text-base text-text-primary">
-                          {t.payment.pledgeTitle}
-                        </p>
-                      </label>
-
-                      {/* Reward Info */}
-                      <div
-                        className={cn(
-                          'mt-4 flex items-center gap-3 rounded-lg p-3.5 transition-colors',
-                          pledgeChecked
-                            ? 'bg-gradient-to-r from-emerald-100 via-emerald-50 to-white'
-                            : 'bg-gradient-to-r from-amber-100 via-amber-50 to-white'
-                        )}
-                      >
-                        <Gift
-                          className={cn(
-                            'w-6 h-6 flex-shrink-0',
-                            pledgeChecked ? 'text-emerald-700' : 'text-amber-700'
-                          )}
-                        />
-                        <p
-                          className={cn(
-                            'font-display text-base sm:text-lg font-bold leading-tight',
-                            pledgeChecked ? 'text-emerald-700' : 'text-amber-700'
-                          )}
-                        >
-                          {pledgeChecked ? t.payment.rewardAppliedCongrats : t.payment.rewardAmount}
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </>
               )}
             </div>
@@ -481,7 +441,7 @@ export function PaymentPage() {
             ) : (
               <div className="bg-white rounded-xl border border-border shadow-sm p-5 sm:p-6">
                 <p className="font-display font-semibold text-sm text-text-light mb-4">
-                  {`${selectedCount} ${t.payment.selectedChallansTitle}`}
+                  {`${isPremium ? displaySummary.courtCount : selectedCount} ${t.payment.selectedChallansTitle}`}
                 </p>
                 {(() => {
                   const onlineList = selectedChallans.filter((c) => c.type === 'online')
@@ -501,17 +461,18 @@ export function PaymentPage() {
                               <span className="font-mono text-xs text-text-light tabular-nums">
                                 {idx + 1}.
                               </span>
-                              <span className="font-mono text-sm text-text-primary">
+                              <span className="font-mono font-semibold text-sm text-text-primary">
                                 #{c.challanNumber}
                               </span>
+                              {notEligibleForExpress && (
+                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-text-light uppercase tracking-wide whitespace-nowrap">
+                                  {t.payment.notEligible}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0">
-                            {notEligibleForExpress ? (
-                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-text-light uppercase tracking-wide whitespace-nowrap">
-                                {t.payment.notEligible}
-                              </span>
-                            ) : premiumOnly ? (
+                            {premiumOnly ? (
                               <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
                                 {t.payment.eligibleForPremium}
                               </span>
@@ -528,7 +489,7 @@ export function PaymentPage() {
                   const onlineSection = onlineList.length > 0 && (
                     <section
                       key="online"
-                      className={cn(isPremium && 'opacity-50 pointer-events-none select-none')}
+                      className={cn(isPremium && 'opacity-30 pointer-events-none select-none')}
                     >
                       <div className="flex items-baseline gap-2.5 mb-2.5">
                         <h4 className="font-display font-bold text-base sm:text-lg text-cyan-700">
@@ -574,6 +535,48 @@ export function PaymentPage() {
                     </div>
                   )
                 })()}
+              </div>
+            )}
+
+            {/* Pledge Card — Regular only, below Selected Challans */}
+            {activeOption.id === 'regular' && (
+              <div className="animate-slide-down bg-white rounded-2xl overflow-hidden border border-border/60 p-4 sm:p-5">
+                <label className="flex items-center justify-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={pledgeChecked}
+                    onChange={handlePledge}
+                    className="w-6 h-6 rounded border-primary text-primary accent-primary focus:ring-primary flex-shrink-0"
+                  />
+                  <p className="font-display font-medium text-base text-text-primary">
+                    {t.payment.pledgeTitle}
+                  </p>
+                </label>
+
+                {/* Reward Info */}
+                <div
+                  className={cn(
+                    'mt-4 flex items-center gap-3 rounded-lg p-3.5 transition-colors',
+                    pledgeChecked
+                      ? 'bg-gradient-to-r from-emerald-100 via-emerald-50 to-white'
+                      : 'bg-gradient-to-r from-amber-100 via-amber-50 to-white'
+                  )}
+                >
+                  <Gift
+                    className={cn(
+                      'w-6 h-6 flex-shrink-0',
+                      pledgeChecked ? 'text-emerald-700' : 'text-amber-700'
+                    )}
+                  />
+                  <p
+                    className={cn(
+                      'font-display text-base sm:text-lg font-bold leading-tight',
+                      pledgeChecked ? 'text-emerald-700' : 'text-amber-700'
+                    )}
+                  >
+                    {pledgeChecked ? t.payment.rewardAppliedCongrats : t.payment.rewardAmount}
+                  </p>
+                </div>
               </div>
             )}
 
@@ -805,9 +808,9 @@ function SummaryBreakdown({ summary, isPremium, t, onOnlineFeeInfo, onCourtFeeIn
           <div className="flex justify-between text-[13px]">
             <span className="text-text-light inline-flex items-center gap-1">
               {t.payment.convenienceFee}
-              {!isPremium && (
-                <span className="text-text-light/70">{`(${summary.courtCount} x ${COURT_CONVENIENCE_FEE})`}</span>
-              )}
+              <span className="text-text-light/70">
+                {`(${summary.courtCount} x ${isPremium ? EXPRESS_CONVENIENCE_FEE : COURT_CONVENIENCE_FEE})`}
+              </span>
               <button
                 type="button"
                 onClick={onCourtFeeInfo}

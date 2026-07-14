@@ -251,7 +251,6 @@ export const hi: TranslationKeys = {
     statusLabel: 'स्थिति',
     shareOnWhatsApp: 'WhatsApp पर शेयर करें',
     pledgeAndClaimRewards: 'प्रतिज्ञा लें और रिवॉर्ड पाएँ🎁 या 10-दिन एक्सप्रेस समाधान⚡',
-    pledgeEligibilityNote: '*अगले चरण में पात्रता जाँचें',
     totalAmountToPay: 'कुल चालान राशि',
     proceedToPay: 'समीक्षा करें और भुगतान करें',
   },

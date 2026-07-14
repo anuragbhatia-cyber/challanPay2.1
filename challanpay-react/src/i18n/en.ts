@@ -249,7 +249,6 @@ export const en = {
     statusLabel: 'Status',
     shareOnWhatsApp: 'Share on WhatsApp',
     pledgeAndClaimRewards: 'Pledge & Claim Rewards🎁 Or 10-Day Express Resolution⚡',
-    pledgeEligibilityNote: '*Check eligibility in next step',
     totalAmountToPay: 'Total Challan Amount',
     proceedToPay: 'Review & Pay',
   },
