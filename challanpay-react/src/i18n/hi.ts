@@ -270,6 +270,7 @@ export const hi: TranslationKeys = {
     onlineTag: 'ऑनलाइन चालान',
     courtTag: 'कोर्ट चालान',
     eligibleForPremium: 'एक्सप्रेस में योग्य',
+    notIncludedInExpress: 'एक्सप्रेस में शामिल नहीं',
     payNow: 'अभी भुगतान',
     pledgeTitle: 'मैं ट्रैफ़िक नियमों का पालन करने की प्रतिज्ञा करता हूँ 🤝',
     pledgeDesc: 'प्रतिज्ञा लें और अपनी कुल राशि पर रिवॉर्ड कमाएँ',

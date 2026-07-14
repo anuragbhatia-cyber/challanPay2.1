@@ -14,7 +14,7 @@ import {
   useChallanStore,
   ONLINE_CONVENIENCE_FEE,
   COURT_CONVENIENCE_FEE,
-  EXPRESS_FEE,
+  EXPRESS_CONVENIENCE_FEE,
   PLEDGE_REWARD,
   type ResolutionMethod,
 } from '@/stores/challanStore'
@@ -70,11 +70,14 @@ export function PaymentPage() {
 
   const displaySummary = useMemo(() => {
     if (!isPremium) return summary
-    const expressFee = summary.courtCount * EXPRESS_FEE
+    // Express: exclude online challans/fees; flat convenience fee on court challans only; no express fee.
     return {
       ...summary,
-      expressFee,
-      subtotal: summary.subtotal + expressFee,
+      onlineAmount: 0,
+      onlineFee: 0,
+      courtFee: summary.courtCount > 0 ? EXPRESS_CONVENIENCE_FEE : 0,
+      expressFee: 0,
+      subtotal: summary.courtAmount + (summary.courtCount > 0 ? EXPRESS_CONVENIENCE_FEE : 0),
     }
   }, [summary, isPremium])
 
@@ -290,7 +293,7 @@ export function PaymentPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-6 lg:gap-10">
-          {/* Left: Resolution Options + Selected Challans + Pledge */}
+          {/* Left: Resolution Options (Pledge nested in Regular) + Selected Challans */}
           <div className="space-y-4">
             {/* Resolution Tabs + Active Screen */}
             <div className="space-y-3">
@@ -466,6 +469,37 @@ export function PaymentPage() {
                         </div>
                       )}
                     </div>
+
+                    {/* Pledge Section — Regular only */}
+                    {activeOption.id === 'regular' && (
+                      <div className="px-4 sm:px-5 pb-4 pt-1 border-t border-border/60">
+                        <label className="flex items-start gap-3 cursor-pointer mt-4">
+                          <input
+                            type="checkbox"
+                            checked={pledgeChecked}
+                            onChange={handlePledge}
+                            className="w-6 h-6 rounded border-primary text-primary accent-primary focus:ring-primary mt-0.5 flex-shrink-0"
+                          />
+                          <div>
+                            <p className="font-display font-semibold text-sm text-text-primary">
+                              {t.payment.pledgeTitle}
+                            </p>
+                            <p className="text-xs text-text-secondary mt-1">
+                              {t.payment.pledgeDesc}
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Reward Info */}
+                        <div className="mt-4 flex items-center gap-3 bg-gradient-to-r from-amber-100 via-amber-50 to-white rounded-lg p-3.5">
+                          <Gift className="w-6 h-6 text-amber-700 flex-shrink-0" />
+                          <div>
+                            <p className="font-display text-base sm:text-lg font-bold text-amber-700 leading-tight">{t.payment.rewardAmount}</p>
+                            <p className="text-xs text-text-light mt-0.5">{t.payment.rewardApplied}</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -523,37 +557,56 @@ export function PaymentPage() {
                       </li>
                     )
                   }
+                  const onlineSection = onlineList.length > 0 && (
+                    <section
+                      key="online"
+                      className={cn(isPremium && 'opacity-50 pointer-events-none select-none')}
+                    >
+                      <div className="flex items-baseline gap-2.5 mb-2.5">
+                        <h4 className="font-display font-bold text-base sm:text-lg text-cyan-700">
+                          {t.payment.onlineChallans}
+                        </h4>
+                        <span className="font-display font-bold text-base sm:text-lg text-cyan-700/70 tabular-nums">
+                          {onlineList.length}
+                        </span>
+                        {isPremium && (
+                          <span className="ml-1 inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-text-light uppercase tracking-wide">
+                            {t.payment.notIncludedInExpress}
+                          </span>
+                        )}
+                      </div>
+                      <ul className="divide-y divide-border/60">
+                        {onlineList.map((c, idx) => renderRow(c, idx))}
+                      </ul>
+                    </section>
+                  )
+                  const courtSection = courtList.length > 0 && (
+                    <section key="court">
+                      <div className="flex items-baseline gap-2.5 mb-2.5">
+                        <h4 className="font-display font-bold text-base sm:text-lg text-rose-800">
+                          {t.payment.courtChallans}
+                        </h4>
+                        <span className="font-display font-bold text-base sm:text-lg text-rose-800/70 tabular-nums">
+                          {courtList.length}
+                        </span>
+                      </div>
+                      <ul className="divide-y divide-border/60">
+                        {courtList.map((c, idx) => renderRow(c, idx))}
+                      </ul>
+                    </section>
+                  )
                   return (
                     <div className="space-y-6">
-                      {!isPremium && onlineList.length > 0 && (
-                        <section>
-                          <div className="flex items-baseline gap-2.5 mb-2.5">
-                            <h4 className="font-display font-bold text-base sm:text-lg text-cyan-700">
-                              {t.payment.onlineChallans}
-                            </h4>
-                            <span className="font-display font-bold text-base sm:text-lg text-cyan-700/70 tabular-nums">
-                              {onlineList.length}
-                            </span>
-                          </div>
-                          <ul className="divide-y divide-border/60">
-                            {onlineList.map((c, idx) => renderRow(c, idx))}
-                          </ul>
-                        </section>
-                      )}
-                      {courtList.length > 0 && (
-                        <section>
-                          <div className="flex items-baseline gap-2.5 mb-2.5">
-                            <h4 className="font-display font-bold text-base sm:text-lg text-rose-800">
-                              {t.payment.courtChallans}
-                            </h4>
-                            <span className="font-display font-bold text-base sm:text-lg text-rose-800/70 tabular-nums">
-                              {courtList.length}
-                            </span>
-                          </div>
-                          <ul className="divide-y divide-border/60">
-                            {courtList.map((c, idx) => renderRow(c, idx))}
-                          </ul>
-                        </section>
+                      {isPremium ? (
+                        <>
+                          {courtSection}
+                          {onlineSection}
+                        </>
+                      ) : (
+                        <>
+                          {onlineSection}
+                          {courtSection}
+                        </>
                       )}
                     </div>
                   )
@@ -561,47 +614,6 @@ export function PaymentPage() {
               </div>
             )}
 
-            {/* Pledge Section — Regular only */}
-            {pageState === 'loading' ? (
-              <div className="bg-white rounded-xl p-4 sm:p-5 space-y-3">
-                <div className="flex items-start gap-3">
-                  <Skeleton className="w-6 h-6 rounded" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-56" />
-                    <Skeleton className="h-3 w-72" />
-                  </div>
-                </div>
-                <Skeleton className="h-12 w-full rounded-lg" />
-              </div>
-            ) : !isPremium ? (
-            <div className="bg-white rounded-xl border border-border shadow-sm p-4 sm:p-5">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={pledgeChecked}
-                  onChange={handlePledge}
-                  className="w-6 h-6 rounded border-primary text-primary accent-primary focus:ring-primary mt-0.5 flex-shrink-0"
-                />
-                <div>
-                  <p className="font-display font-semibold text-sm text-text-primary">
-                    {t.payment.pledgeTitle}
-                  </p>
-                  <p className="text-xs text-text-secondary mt-1">
-                    {t.payment.pledgeDesc}
-                  </p>
-                </div>
-              </label>
-
-              {/* Reward Info */}
-              <div className="mt-4 flex items-center gap-3 bg-gradient-to-r from-amber-100 via-amber-50 to-white rounded-lg p-3.5">
-                <Gift className="w-6 h-6 text-amber-700 flex-shrink-0" />
-                <div>
-                  <p className="font-display text-base sm:text-lg font-bold text-amber-700 leading-tight">{t.payment.rewardAmount}</p>
-                  <p className="text-xs text-text-light mt-0.5">{t.payment.rewardApplied}</p>
-                </div>
-              </div>
-            </div>
-            ) : null}
           </div>
 
           {/* Right: Payment Summary (desktop only) */}
@@ -788,8 +800,8 @@ type SummaryBreakdownProps = {
 function SummaryBreakdown({ summary, isPremium, t, onOnlineFeeInfo, onCourtFeeInfo }: SummaryBreakdownProps) {
   return (
     <div className="space-y-3.5">
-      {/* Online Challan */}
-      {summary.onlineCount > 0 && (
+      {/* Online Challan — Regular only */}
+      {!isPremium && summary.onlineCount > 0 && (
         <div className="space-y-0.5">
           <div className="flex justify-between text-[13px]">
             <span className="font-display font-semibold text-text-primary">
@@ -829,7 +841,10 @@ function SummaryBreakdown({ summary, isPremium, t, onOnlineFeeInfo, onCourtFeeIn
           </div>
           <div className="flex justify-between text-[13px]">
             <span className="text-text-light inline-flex items-center gap-1">
-              {t.payment.convenienceFee} <span className="text-text-light/70">{`(${summary.courtCount} x ${COURT_CONVENIENCE_FEE})`}</span>
+              {t.payment.convenienceFee}
+              {!isPremium && (
+                <span className="text-text-light/70">{`(${summary.courtCount} x ${COURT_CONVENIENCE_FEE})`}</span>
+              )}
               <button
                 type="button"
                 onClick={onCourtFeeInfo}
@@ -841,14 +856,6 @@ function SummaryBreakdown({ summary, isPremium, t, onOnlineFeeInfo, onCourtFeeIn
             </span>
             <span className="font-medium text-text-light">₹{formatINR(summary.courtFee)}</span>
           </div>
-          {isPremium && (
-            <div className="flex justify-between text-[13px]">
-              <span className="text-text-light">
-                {t.payment.expressFee} <span className="text-text-light/70">{`(${summary.courtCount} x ${EXPRESS_FEE})`}</span>
-              </span>
-              <span className="font-medium text-text-light">₹{formatINR(summary.expressFee)}</span>
-            </div>
-          )}
         </div>
       )}
     </div>

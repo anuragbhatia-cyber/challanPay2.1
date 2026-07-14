@@ -18,6 +18,7 @@ export type ResolutionMethod = 'regular' | 'premium'
 export const ONLINE_CONVENIENCE_FEE = 200
 export const COURT_CONVENIENCE_FEE = 2000
 export const EXPRESS_FEE = 1000
+export const EXPRESS_CONVENIENCE_FEE = 3000
 export const PLEDGE_REWARD = 1000
 
 interface ChallanState {

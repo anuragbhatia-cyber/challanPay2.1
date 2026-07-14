@@ -13,7 +13,7 @@ import { Skeleton, SkeletonCard } from '@/components/shared/Skeleton'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useChallanStore, type ChallanItem } from '@/stores/challanStore'
 
-type Challan = ChallanItem & { pendingSince: string; reportedByUser?: boolean }
+type Challan = ChallanItem & { pendingSince: string; reportedByUser?: boolean; disabled?: boolean }
 
 interface PaidChallan {
   id: string
@@ -33,6 +33,7 @@ const MOCK_CHALLANS: Challan[] = [
   { id: '4', challanNumber: 'DL08838230627114378', amount: 2500, violation: 'Improper Parking', date: '11 Sep 2023', location: 'Connaught Place, New Delhi', type: 'online', pendingSince: '20 months', premiumEligible: true },
   { id: '5', challanNumber: 'UP16838230627114379', amount: 10000, violation: 'Driving under the influence of alcohol exceeding permissible blood-alcohol concentration limits', date: '22 Oct 2023', location: 'Greater Noida Expressway, near Pari Chowk', type: 'court', pendingSince: '19 months' },
   { id: '6', challanNumber: 'HR26838230627114380', amount: 1500, violation: 'Without Seatbelt', date: '05 Nov 2023', location: 'NH-8, Manesar', type: 'online', pendingSince: '18 months' },
+  { id: '7', challanNumber: 'DL03838230627114381', amount: 0, violation: 'Signal Jump', date: '12 Dec 2023', location: 'ITO Junction, New Delhi', type: 'online', pendingSince: '17 months', disabled: true },
 ]
 
 const MOCK_PAID_CHALLANS: PaidChallan[] = [
@@ -101,14 +102,14 @@ export function StatusPage() {
   useEffect(() => {
     const pending = MOCK_CHALLANS.filter((c) => !submittedIdSet.has(c.id))
     setChallansInStore(pending)
-    const pendingIds = pending.map((c) => c.id)
-    const pendingIdSet = new Set(pendingIds)
+    const selectableIds = pending.filter((c) => !c.disabled).map((c) => c.id)
+    const selectableIdSet = new Set(selectableIds)
     const persisted = useChallanStore.getState().selectedChallanIds
-    const restored = persisted.filter((id) => pendingIdSet.has(id))
+    const restored = persisted.filter((id) => selectableIdSet.has(id))
     if (restored.length > 0) {
       if (restored.length !== persisted.length) selectAllInStore(restored)
     } else {
-      selectAllInStore(pendingIds)
+      selectAllInStore(selectableIds)
     }
     // Run once on mount; later edits don't reset selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,8 +129,9 @@ export function StatusPage() {
   useModalA11y(tabInfo !== null, () => setTabInfo(null))
 
   const filteredChallans = useMemo(() => {
-    if (activeFilter === 'all') return allChallans
-    return allChallans.filter((c) => c.type === activeFilter)
+    const base = activeFilter === 'all' ? allChallans : allChallans.filter((c) => c.type === activeFilter)
+    // Keep disabled (non-payable) challans at the bottom while preserving original order otherwise.
+    return [...base].sort((a, b) => Number(!!a.disabled) - Number(!!b.disabled))
   }, [activeFilter, allChallans])
 
   // Use Set for O(1) lookups (js-set-map-lookups)
@@ -140,7 +142,13 @@ export function StatusPage() {
     [selectedIdsSet, filteredChallans]
   )
 
-  const isAllSelected = filteredChallans.length > 0 && filteredChallans.every((c) => selectedIdsSet.has(c.id))
+  const selectableFilteredChallans = useMemo(
+    () => filteredChallans.filter((c) => !c.disabled),
+    [filteredChallans]
+  )
+  const isAllSelected =
+    selectableFilteredChallans.length > 0 &&
+    selectableFilteredChallans.every((c) => selectedIdsSet.has(c.id))
 
   const toggleChallan = (id: string) => {
     toggleChallanInStore(id)
@@ -150,7 +158,7 @@ export function StatusPage() {
     if (isAllSelected) {
       selectAllInStore([])
     } else {
-      selectAllInStore(filteredChallans.map((c) => c.id))
+      selectAllInStore(selectableFilteredChallans.map((c) => c.id))
     }
   }
 
@@ -178,7 +186,7 @@ export function StatusPage() {
   }
 
   const handlePayAll = () => {
-    selectAllInStore(filteredChallans.map((c) => c.id))
+    selectAllInStore(selectableFilteredChallans.map((c) => c.id))
     setShowUnpaidWarning(false)
     navigate('/payment')
   }
@@ -252,8 +260,8 @@ export function StatusPage() {
               <p className="font-display font-bold text-text-primary text-lg truncate" title={vehicle}>{vehicle}</p>
             </div>
           </div>
-          <span className="mt-3 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold w-full">
-            <img src="/images/govt-verified-badge.png" alt="" className="w-5 h-5" />
+          <span className="mt-3 flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 text-sm font-semibold w-full border-2 border-emerald-500 shadow-sm">
+            <img src="/images/govt-verified-badge.png" alt="" className="w-6 h-6" />
             Govt. Verified Data
           </span>
         </div>
@@ -362,8 +370,8 @@ export function StatusPage() {
                   Govt. Verified Data
                 </span>
               </div>
-              <span className="sm:hidden mt-3 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold w-full">
-                <img src="/images/govt-verified-badge.png" alt="" className="w-5 h-5" />
+              <span className="sm:hidden mt-3 flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 text-sm font-semibold w-full border-2 border-emerald-500 shadow-sm">
+                <img src="/images/govt-verified-badge.png" alt="" className="w-6 h-6" />
                 Govt. Verified Data
               </span>
             </div>
@@ -472,22 +480,26 @@ export function StatusPage() {
                       key={challan.id}
                       className={cn(
                         'relative bg-white rounded-xl border pt-8 px-5 pb-5 transition-all',
-                        challan.reportedByUser
-                          ? selectedIdsSet.has(challan.id)
-                            ? 'border-amber-400 shadow-md'
-                            : 'border-amber-400 shadow-sm hover:shadow-md'
-                          : selectedIdsSet.has(challan.id)
-                            ? 'border-primary shadow-md'
-                            : 'border-border shadow-sm hover:border-primary/30 hover:shadow-md'
+                        challan.disabled
+                          ? 'border-border shadow-sm opacity-60'
+                          : challan.reportedByUser
+                            ? selectedIdsSet.has(challan.id)
+                              ? 'border-amber-400 shadow-md'
+                              : 'border-amber-400 shadow-sm hover:shadow-md'
+                            : selectedIdsSet.has(challan.id)
+                              ? 'border-primary shadow-md'
+                              : 'border-border shadow-sm hover:border-primary/30 hover:shadow-md'
                       )}
                     >
                       {/* Type badge — top-left, flush to border */}
-                      <span className={cn(
-                        'absolute top-0 left-0 text-[10px] font-bold uppercase px-3 py-1 rounded-tl-xl rounded-br-lg',
-                        challan.type === 'online' ? 'bg-info/10 text-info' : 'bg-warning/10 text-warning'
-                      )}>
-                        {challan.type === 'online' ? t.status.onlineChallan : t.status.courtChallan}
-                      </span>
+                      {!challan.disabled && (
+                        <span className={cn(
+                          'absolute top-0 left-0 text-[10px] font-bold uppercase px-3 py-1 rounded-tl-xl rounded-br-lg',
+                          challan.type === 'online' ? 'bg-info/10 text-info' : 'bg-warning/10 text-warning'
+                        )}>
+                          {challan.type === 'online' ? t.status.onlineChallan : t.status.courtChallan}
+                        </span>
+                      )}
 
                       {/* Card Header */}
                       <div className="flex items-center justify-between mb-1">
@@ -511,15 +523,26 @@ export function StatusPage() {
                             </span>
                           )}
                         </div>
-                        <label className="relative inline-flex w-11 h-11 shrink-0 items-center justify-center cursor-pointer -mr-2.5">
+                        <label
+                          className={cn(
+                            'relative inline-flex w-11 h-11 shrink-0 items-center justify-center -mr-2.5',
+                            challan.disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+                          )}
+                        >
                           <input
                             type="checkbox"
                             checked={selectedIdsSet.has(challan.id)}
                             onChange={() => toggleChallan(challan.id)}
+                            disabled={challan.disabled}
                             className="peer sr-only"
                           />
-                          <span className="w-6 h-6 box-border rounded-md border-2 border-border bg-white peer-checked:bg-primary peer-checked:border-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-1 flex items-center justify-center transition-colors">
-                            <Check className="w-5 h-5 text-white" strokeWidth={3.5} />
+                          <span className={cn(
+                            'w-6 h-6 box-border rounded-md border-2 border-border bg-white flex items-center justify-center transition-colors',
+                            challan.disabled
+                              ? 'bg-gray-100 border-gray-200'
+                              : 'peer-checked:bg-primary peer-checked:border-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-1'
+                          )}>
+                            {!challan.disabled && <Check className="w-5 h-5 text-white" strokeWidth={3.5} />}
                           </span>
                         </label>
                       </div>

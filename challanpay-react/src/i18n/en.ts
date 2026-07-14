@@ -268,6 +268,7 @@ export const en = {
     onlineTag: 'Online Challan',
     courtTag: 'Court Challan',
     eligibleForPremium: 'Eligible in Express',
+    notIncludedInExpress: 'Not included in Express',
     payNow: 'Pay Now',
     pledgeTitle: 'I pledge to follow traffic rules 🤝',
     pledgeDesc: 'Take the pledge and earn rewards on your total amount',
