@@ -599,7 +599,12 @@ export function StatusPage() {
               <div className="fixed md:sticky bottom-0 md:bottom-4 left-0 right-0 md:left-auto md:right-auto z-50 md:z-40 bg-white border-t border-border md:border md:rounded-2xl rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.08)] md:shadow-xl overflow-hidden animate-slide-down">
                 {/* Pledge & Claim Rewards banner */}
                 <div className="px-4 py-2.5 bg-gradient-to-r from-amber-100 via-amber-50 to-white border-b border-amber-100">
-                  <p className="text-sm font-semibold text-amber-700 leading-snug">{t.status.pledgeAndClaimRewards}</p>
+                  <p className="text-sm font-semibold text-amber-700 leading-snug">
+                    {t.status.pledgeAndClaimRewards}
+                    <span className="ml-2 text-[11px] font-normal text-amber-700/80 whitespace-nowrap">
+                      {t.status.pledgeEligibilityNote}
+                    </span>
+                  </p>
                 </div>
                 <div className="px-4 py-3 flex items-center justify-between gap-4">
                   <div className="min-w-0">

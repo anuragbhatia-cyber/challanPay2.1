@@ -1,19 +1,56 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Phone } from 'lucide-react'
+import { ArrowRight, ChevronDown, Phone, X } from 'lucide-react'
+import { toast } from 'sonner'
 import { ScrollReveal } from '@/components/shared/ScrollReveal'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useModalA11y } from '@/hooks/useModalA11y'
+import { mobileSchema } from '@/lib/validators'
 import { cn } from '@/lib/utils'
 
 export function NeedHelpSection() {
   const { t } = useTranslation()
   const [openIndex, setOpenIndex] = useState<number | null>(null)
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false)
+  const [callbackMobile, setCallbackMobile] = useState('')
+  const [callbackError, setCallbackError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const closeCallModal = () => {
+    if (isSubmitting) return
+    setIsCallModalOpen(false)
+  }
+
+  useModalA11y(isCallModalOpen, closeCallModal)
+
+  useEffect(() => {
+    if (!isCallModalOpen) {
+      setCallbackMobile('')
+      setCallbackError('')
+      setIsSubmitting(false)
+    }
+  }, [isCallModalOpen])
 
   const handleWhatsAppClick = () => {
     window.open(
       'https://wa.me/919988441033?text=Hi%2C%20I%20need%20help%20with%20my%20challan',
       '_blank'
     )
+  }
+
+  const handleCallbackSubmit = () => {
+    const result = mobileSchema.safeParse(callbackMobile)
+    if (!result.success) {
+      setCallbackError(result.error.errors[0].message)
+      return
+    }
+    setCallbackError('')
+    setIsSubmitting(true)
+    // Simulate a network request; in production this would hit the callback API.
+    window.setTimeout(() => {
+      toast.success(t.needHelp.callModalSuccess)
+      setIsCallModalOpen(false)
+    }, 700)
   }
 
   return (
@@ -60,10 +97,11 @@ export function NeedHelpSection() {
 
           {/* Click to Call Card */}
           <ScrollReveal delay={0.2}>
-            <motion.a
-              href="tel:+919988441033"
+            <motion.button
+              type="button"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              onClick={() => setIsCallModalOpen(true)}
               className="w-full flex items-center justify-start gap-4 p-6 rounded-2xl border border-border bg-white hover:bg-gray-50 transition-colors text-left group"
             >
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -72,7 +110,7 @@ export function NeedHelpSection() {
               <h3 className="font-display text-base font-semibold text-text-primary">
                 {t.needHelp.callTitle}
               </h3>
-            </motion.a>
+            </motion.button>
           </ScrollReveal>
         </div>
 
@@ -143,6 +181,104 @@ export function NeedHelpSection() {
           </div>
         </div>
       </div>
+
+      {/* Callback Modal */}
+      <AnimatePresence>
+        {isCallModalOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm md:p-4"
+            onClick={closeCallModal}
+          >
+            <motion.div
+              initial={{ y: '100%', opacity: 1 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 1 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="relative w-full md:max-w-md bg-white rounded-t-2xl md:rounded-2xl shadow-xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="call-modal-title"
+            >
+              <div className="flex justify-center pt-3 pb-1 md:hidden">
+                <div className="w-10 h-1 rounded-full bg-gray-300" />
+              </div>
+
+              <button
+                type="button"
+                onClick={closeCallModal}
+                aria-label="Close"
+                className="absolute top-2 right-2 md:top-3 md:right-3 w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors z-10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="p-6 pb-8 md:p-8">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <Phone className="w-6 h-6 text-primary" />
+                </div>
+                <h3 id="call-modal-title" className="font-display text-xl md:text-2xl font-bold text-text-primary mb-2">
+                  {t.needHelp.callModalTitle}
+                </h3>
+                <p className="font-body text-sm text-text-secondary mb-6">
+                  {t.needHelp.callModalSubtitle}
+                </p>
+
+                <label htmlFor="callback-mobile" className="block text-xs font-medium text-text-secondary mb-2 font-body">
+                  Mobile Number
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-body">
+                    +91
+                  </span>
+                  <input
+                    id="callback-mobile"
+                    type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
+                    value={callbackMobile}
+                    onChange={(e) => {
+                      setCallbackMobile(e.target.value.replace(/\D/g, ''))
+                      setCallbackError('')
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleCallbackSubmit()
+                      }
+                    }}
+                    placeholder="10-digit mobile number"
+                    autoFocus
+                    aria-invalid={callbackError ? true : undefined}
+                    aria-describedby={callbackError ? 'callback-mobile-error' : undefined}
+                    className="w-full pl-12 pr-4 py-4 rounded-xl border border-border bg-gray-50 text-sm font-body text-text-primary placeholder:text-gray-500 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                  />
+                </div>
+                {callbackError && (
+                  <p id="callback-mobile-error" role="alert" className="text-xs text-red-500 mt-1.5 font-body">
+                    {callbackError}
+                  </p>
+                )}
+
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
+                  whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+                  onClick={handleCallbackSubmit}
+                  disabled={isSubmitting}
+                  className="w-full mt-6 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 disabled:opacity-70 disabled:hover:bg-primary text-white font-display font-semibold py-4 rounded-xl transition-colors text-sm"
+                >
+                  {t.needHelp.callModalCta}
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   )
 }

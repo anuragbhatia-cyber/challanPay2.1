@@ -378,17 +378,6 @@ export function PaymentPage() {
                             >
                               {option.label}
                             </span>
-                            {option.id === 'regular' ? (
-                              <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-                                {t.payment.recommended}
-                              </span>
-                            ) : (
-                              !option.disabled && (
-                                <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                                  {t.payment.expressTag}
-                                </span>
-                              )
-                            )}
                           </div>
                         </button>
                       )
@@ -433,32 +422,49 @@ export function PaymentPage() {
                     </div>
 
 
-                    {/* Pledge Section — Regular only */}
-                    {activeOption.id === 'regular' && (
-                      <div className="px-4 sm:px-5 pb-4 pt-1 border-t border-border/60">
-                        <label className="flex items-center justify-start gap-3 cursor-pointer mt-4">
-                          <input
-                            type="checkbox"
-                            checked={pledgeChecked}
-                            onChange={handlePledge}
-                            className="w-6 h-6 rounded border-primary text-primary accent-primary focus:ring-primary flex-shrink-0"
-                          />
-                          <p className="font-display font-medium text-base text-text-primary">
-                            {t.payment.pledgeTitle}
-                          </p>
-                        </label>
-
-                        {/* Reward Info */}
-                        <div className="mt-4 flex items-center gap-3 bg-gradient-to-r from-amber-100 via-amber-50 to-white rounded-lg p-3.5">
-                          <Gift className="w-6 h-6 text-amber-700 flex-shrink-0" />
-                          <div>
-                            <p className="font-display text-base sm:text-lg font-bold text-amber-700 leading-tight">{t.payment.rewardAmount}</p>
-                            <p className="text-xs text-text-light mt-0.5">{t.payment.rewardApplied}</p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
+
+                  {/* Pledge Card — Regular only, separate from resolution card */}
+                  {activeOption.id === 'regular' && (
+                    <div className="animate-slide-down bg-white rounded-2xl overflow-hidden border border-border/60 p-4 sm:p-5">
+                      <label className="flex items-center justify-start gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={pledgeChecked}
+                          onChange={handlePledge}
+                          className="w-6 h-6 rounded border-primary text-primary accent-primary focus:ring-primary flex-shrink-0"
+                        />
+                        <p className="font-display font-medium text-base text-text-primary">
+                          {t.payment.pledgeTitle}
+                        </p>
+                      </label>
+
+                      {/* Reward Info */}
+                      <div
+                        className={cn(
+                          'mt-4 flex items-center gap-3 rounded-lg p-3.5 transition-colors',
+                          pledgeChecked
+                            ? 'bg-gradient-to-r from-emerald-100 via-emerald-50 to-white'
+                            : 'bg-gradient-to-r from-amber-100 via-amber-50 to-white'
+                        )}
+                      >
+                        <Gift
+                          className={cn(
+                            'w-6 h-6 flex-shrink-0',
+                            pledgeChecked ? 'text-emerald-700' : 'text-amber-700'
+                          )}
+                        />
+                        <p
+                          className={cn(
+                            'font-display text-base sm:text-lg font-bold leading-tight',
+                            pledgeChecked ? 'text-emerald-700' : 'text-amber-700'
+                          )}
+                        >
+                          {pledgeChecked ? t.payment.rewardAppliedCongrats : t.payment.rewardAmount}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </>
               )}
             </div>
@@ -533,11 +539,6 @@ export function PaymentPage() {
                         <span className="font-display font-bold text-base sm:text-lg text-cyan-700/70 tabular-nums">
                           {onlineList.length}
                         </span>
-                        {isPremium && (
-                          <span className="ml-1 inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-text-light uppercase tracking-wide">
-                            {t.payment.notIncludedInExpress}
-                          </span>
-                        )}
                       </div>
                       <ul className="divide-y divide-border/60">
                         {onlineList.map((c, idx) => renderRow(c, idx))}
