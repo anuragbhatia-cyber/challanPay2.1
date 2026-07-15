@@ -92,6 +92,7 @@ export function PaymentPage() {
   const [showBackConfirm, setShowBackConfirm] = useState(false)
   const [legalChargesInfo, setLegalChargesInfo] = useState<'online' | 'court' | null>(null)
   const [showIneligibleInfo, setShowIneligibleInfo] = useState(false)
+  const [showAllIneligible, setShowAllIneligible] = useState(false)
 
   const pledgeActive = pledgeChecked && !isPremium
   const payNowTotal = pledgeActive ? Math.max(0, displaySummary.subtotal - PLEDGE_REWARD) : displaySummary.subtotal
@@ -474,7 +475,18 @@ export function PaymentPage() {
                 (c) => c.type === 'court' && c.expressEligible === false,
               )
               const ineligibleOnline = selectedChallans.filter((c) => c.type === 'online')
-              if (ineligibleCourt.length === 0 && ineligibleOnline.length === 0) return null
+              const totalIneligible = ineligibleCourt.length + ineligibleOnline.length
+              if (totalIneligible === 0) return null
+              const INITIAL_VISIBLE = 3
+              const isCollapsed = !showAllIneligible && totalIneligible > INITIAL_VISIBLE
+              const courtVisible = isCollapsed
+                ? ineligibleCourt.slice(0, INITIAL_VISIBLE)
+                : ineligibleCourt
+              const onlineBudget = isCollapsed
+                ? Math.max(0, INITIAL_VISIBLE - courtVisible.length)
+                : ineligibleOnline.length
+              const onlineVisible = ineligibleOnline.slice(0, onlineBudget)
+              const hiddenCount = totalIneligible - (courtVisible.length + onlineVisible.length)
               const renderIneligibleRow = (c: typeof selectedChallans[number], idx: number) => (
                 <li key={c.id} className="py-2 first:pt-0 last:pb-0">
                   <div className="flex items-center justify-between gap-3">
@@ -510,7 +522,7 @@ export function PaymentPage() {
                     </button>
                   </div>
                   <div className="space-y-4">
-                    {ineligibleCourt.length > 0 && (
+                    {courtVisible.length > 0 && (
                       <section>
                         <div className="flex items-baseline gap-2 mb-1.5">
                           <h4 className="font-display font-semibold text-xs text-rose-800/60 uppercase tracking-wide">
@@ -521,11 +533,11 @@ export function PaymentPage() {
                           </span>
                         </div>
                         <ul className="divide-y divide-border/40">
-                          {ineligibleCourt.map((c, idx) => renderIneligibleRow(c, idx))}
+                          {courtVisible.map((c, idx) => renderIneligibleRow(c, idx))}
                         </ul>
                       </section>
                     )}
-                    {ineligibleOnline.length > 0 && (
+                    {onlineVisible.length > 0 && (
                       <section>
                         <div className="flex items-baseline gap-2 mb-1.5">
                           <h4 className="font-display font-semibold text-xs text-cyan-700/60 uppercase tracking-wide">
@@ -536,11 +548,31 @@ export function PaymentPage() {
                           </span>
                         </div>
                         <ul className="divide-y divide-border/40">
-                          {ineligibleOnline.map((c, idx) => renderIneligibleRow(c, idx))}
+                          {onlineVisible.map((c, idx) => renderIneligibleRow(c, idx))}
                         </ul>
                       </section>
                     )}
                   </div>
+                  {totalIneligible > INITIAL_VISIBLE && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllIneligible((v) => !v)}
+                      className="mt-3 w-full flex items-center justify-center gap-1 py-2 rounded-lg text-xs font-semibold text-text-light hover:text-text-primary hover:bg-gray-100/70 transition-colors"
+                    >
+                      <span>
+                        {showAllIneligible
+                          ? t.payment.showLess
+                          : t.payment.showMoreCount.replace('{n}', String(hiddenCount))}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          'w-3.5 h-3.5 transition-transform',
+                          showAllIneligible && 'rotate-180',
+                        )}
+                        aria-hidden
+                      />
+                    </button>
+                  )}
                 </div>
               )
             })()}

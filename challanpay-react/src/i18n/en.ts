@@ -270,6 +270,8 @@ export const en = {
     selectedChallansTitle: 'Selected Challans',
     ineligibleChallansTitle: 'Ineligible challans',
     ineligibleChallansDesc: 'These challans require standard court dispute timelines and are ineligible for Express resolution.',
+    showMoreCount: 'Show {n} more',
+    showLess: 'Show less',
     premiumEligibleTag: 'Express',
     regularOnlyTag: 'Regular only',
     onlineTag: 'Online Challan',

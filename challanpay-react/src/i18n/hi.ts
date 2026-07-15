@@ -272,6 +272,8 @@ export const hi: TranslationKeys = {
     selectedChallansTitle: 'चयनित चालान',
     ineligibleChallansTitle: 'अपात्र चालान',
     ineligibleChallansDesc: 'इन चालानों के लिए मानक कोर्ट विवाद प्रक्रिया लागू होती है और ये एक्सप्रेस समाधान के लिए पात्र नहीं हैं।',
+    showMoreCount: '{n} और देखें',
+    showLess: 'कम देखें',
     premiumEligibleTag: 'एक्सप्रेस',
     regularOnlyTag: 'केवल रेगुलर',
     onlineTag: 'ऑनलाइन चालान',
