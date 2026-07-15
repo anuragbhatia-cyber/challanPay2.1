@@ -602,6 +602,9 @@ export function StatusPage() {
                   <p className="text-sm font-semibold text-amber-900 leading-snug">
                     {t.status.pledgeAndClaimRewards}
                   </p>
+                  <p className="text-[11px] text-amber-800/80 leading-snug mt-0.5">
+                    {t.status.checkEligibilityNextStep}
+                  </p>
                 </div>
                 <div className="px-4 py-3 flex items-center justify-between gap-4">
                   <div className="min-w-0">

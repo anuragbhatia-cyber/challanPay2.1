@@ -91,6 +91,7 @@ export function PaymentPage() {
   const [pledgeChecked, setPledgeChecked] = useState(false)
   const [showBackConfirm, setShowBackConfirm] = useState(false)
   const [legalChargesInfo, setLegalChargesInfo] = useState<'online' | 'court' | null>(null)
+  const [showIneligibleInfo, setShowIneligibleInfo] = useState(false)
 
   const pledgeActive = pledgeChecked && !isPremium
   const payNowTotal = pledgeActive ? Math.max(0, displaySummary.subtotal - PLEDGE_REWARD) : displaySummary.subtotal
@@ -98,6 +99,7 @@ export function PaymentPage() {
 
   useModalA11y(legalChargesInfo !== null, () => setLegalChargesInfo(null))
   useModalA11y(showBackConfirm, () => setShowBackConfirm(false))
+  useModalA11y(showIneligibleInfo, () => setShowIneligibleInfo(false))
 
   const prefersReducedMotion = useReducedMotion()
 
@@ -175,6 +177,45 @@ export function PaymentPage() {
 
   return (
     <PageTransition>
+      {/* Ineligible Challans Info Modal */}
+      {showIneligibleInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShowIneligibleInfo(false)}
+        >
+          <div
+            className="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowIneligibleInfo(false)}
+              className="absolute top-2 right-2 z-10 w-11 h-11 rounded-full bg-white/80 flex items-center justify-center text-gray-500 hover:bg-white transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="bg-gradient-to-b from-gray-50 via-gray-50/40 to-white pt-8 pb-4 px-6 text-left">
+              <h3 className="font-display text-xl font-bold text-text-primary mb-2">
+                {t.payment.ineligibleChallansTitle}
+              </h3>
+              <p className="text-base leading-relaxed text-text-primary">
+                {t.payment.ineligibleChallansDesc}
+              </p>
+            </div>
+
+            <div className="px-6 pt-4 pb-6">
+              <button
+                onClick={() => setShowIneligibleInfo(false)}
+                className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm shadow-sm"
+              >
+                {t.payment.gotIt}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Legal Charges Info Modal */}
       {legalChargesInfo && (
         <div
@@ -427,6 +468,83 @@ export function PaymentPage() {
               )}
             </div>
 
+            {/* Ineligible Challans — Express only, shown above Selected Challans */}
+            {pageState !== 'loading' && isPremium && (() => {
+              const ineligibleCourt = selectedChallans.filter(
+                (c) => c.type === 'court' && c.expressEligible === false,
+              )
+              const ineligibleOnline = selectedChallans.filter((c) => c.type === 'online')
+              if (ineligibleCourt.length === 0 && ineligibleOnline.length === 0) return null
+              const renderIneligibleRow = (c: typeof selectedChallans[number], idx: number) => (
+                <li key={c.id} className="py-2 first:pt-0 last:pb-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-xs text-text-light/70 tabular-nums">
+                          {idx + 1}.
+                        </span>
+                        <span className="font-mono text-xs text-text-light">
+                          #{c.challanNumber}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="font-display text-xs whitespace-nowrap text-text-light flex-shrink-0">
+                      ₹{formatINR(c.amount)}
+                    </span>
+                  </div>
+                </li>
+              )
+              return (
+                <div className="bg-gray-50/70 rounded-xl border border-border/50 p-4 sm:p-5">
+                  <div className="mb-3 flex items-center gap-2">
+                    <h3 className="font-display font-bold text-base text-text-primary">
+                      {t.payment.ineligibleChallansTitle}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowIneligibleInfo(true)}
+                      aria-label={t.payment.ineligibleChallansTitle}
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-text-light hover:text-text-primary hover:bg-gray-200/60 transition-colors"
+                    >
+                      <Info className="w-4 h-4" aria-hidden />
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    {ineligibleCourt.length > 0 && (
+                      <section>
+                        <div className="flex items-baseline gap-2 mb-1.5">
+                          <h4 className="font-display font-semibold text-xs text-rose-800/60 uppercase tracking-wide">
+                            {t.payment.courtChallans}
+                          </h4>
+                          <span className="font-display font-semibold text-xs text-rose-800/50 tabular-nums">
+                            {ineligibleCourt.length}
+                          </span>
+                        </div>
+                        <ul className="divide-y divide-border/40">
+                          {ineligibleCourt.map((c, idx) => renderIneligibleRow(c, idx))}
+                        </ul>
+                      </section>
+                    )}
+                    {ineligibleOnline.length > 0 && (
+                      <section>
+                        <div className="flex items-baseline gap-2 mb-1.5">
+                          <h4 className="font-display font-semibold text-xs text-cyan-700/60 uppercase tracking-wide">
+                            {t.payment.onlineChallans}
+                          </h4>
+                          <span className="font-display font-semibold text-xs text-cyan-700/50 tabular-nums">
+                            {ineligibleOnline.length}
+                          </span>
+                        </div>
+                        <ul className="divide-y divide-border/40">
+                          {ineligibleOnline.map((c, idx) => renderIneligibleRow(c, idx))}
+                        </ul>
+                      </section>
+                    )}
+                  </div>
+                </div>
+              )
+            })()}
+
             {/* Selected Challans */}
             {pageState === 'loading' ? (
               <div className="bg-white rounded-xl p-4 sm:p-5 space-y-3">
@@ -444,16 +562,18 @@ export function PaymentPage() {
                   {`${isPremium ? displaySummary.courtCount : selectedCount} ${t.payment.selectedChallansTitle}`}
                 </p>
                 {(() => {
-                  const onlineList = selectedChallans.filter((c) => c.type === 'online')
-                  const courtList = selectedChallans.filter((c) => c.type === 'court')
+                  const allOnlineList = selectedChallans.filter((c) => c.type === 'online')
+                  const allCourtList = selectedChallans.filter((c) => c.type === 'court')
+                  const onlineList = isPremium ? [] : allOnlineList
+                  const courtList = isPremium
+                    ? allCourtList.filter((c) => c.expressEligible !== false)
+                    : allCourtList
                   const renderRow = (c: typeof selectedChallans[number], idx: number) => {
                     const premiumOnly = !isPremium && c.amount === 0
-                    const notEligibleForExpress = isPremium && c.type === 'court' && c.expressEligible === false
-                    const muted = premiumOnly || notEligibleForExpress
                     return (
                       <li
                         key={c.id}
-                        className={cn('py-2.5 first:pt-0 last:pb-0', muted && 'opacity-60')}
+                        className={cn('py-2.5 first:pt-0 last:pb-0', premiumOnly && 'opacity-60')}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <div className="min-w-0 flex-1">
@@ -464,11 +584,6 @@ export function PaymentPage() {
                               <span className="font-mono font-semibold text-sm text-text-primary">
                                 #{c.challanNumber}
                               </span>
-                              {notEligibleForExpress && (
-                                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-text-light uppercase tracking-wide whitespace-nowrap">
-                                  {t.payment.notEligible}
-                                </span>
-                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-3 flex-shrink-0">
@@ -487,10 +602,7 @@ export function PaymentPage() {
                     )
                   }
                   const onlineSection = onlineList.length > 0 && (
-                    <section
-                      key="online"
-                      className={cn(isPremium && 'opacity-30 pointer-events-none select-none')}
-                    >
+                    <section key="online">
                       <div className="flex items-baseline gap-2.5 mb-2.5">
                         <h4 className="font-display font-bold text-base sm:text-lg text-cyan-700">
                           {t.payment.onlineChallans}
