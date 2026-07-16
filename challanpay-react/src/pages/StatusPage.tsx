@@ -31,9 +31,10 @@ const MOCK_CHALLANS: Challan[] = [
   { id: '2', challanNumber: 'DL01234567890123456', amount: 5000, violation: 'Disobedience of any direction or obstruction of any function by a driver', date: '15 Jul 2023', location: 'Outer Ring Road, near Dhaula Kuan, New Delhi', type: 'court', pendingSince: '23 months' },
   { id: '3', challanNumber: 'HR26838230627114377', amount: 1000, violation: 'No Helmet', date: '03 Aug 2023', location: 'Sector 29 Market, Gurugram', type: 'online', pendingSince: '22 months', premiumEligible: true },
   { id: '4', challanNumber: 'DL08838230627114378', amount: 2500, violation: 'Improper Parking', date: '11 Sep 2023', location: 'Connaught Place, New Delhi', type: 'online', pendingSince: '20 months', premiumEligible: true },
-  { id: '5', challanNumber: 'UP16838230627114379', amount: 10000, violation: 'Driving under the influence of alcohol exceeding permissible blood-alcohol concentration limits', date: '22 Oct 2023', location: 'Greater Noida Expressway, near Pari Chowk', type: 'court', pendingSince: '19 months', expressEligible: false },
+  { id: '5', challanNumber: 'UP16838230627114379', amount: 10000, violation: 'Driving under the influence of alcohol exceeding permissible blood-alcohol concentration limits', date: '22 Oct 2023', location: 'Greater Noida Expressway, near Pari Chowk', type: 'court', pendingSince: '19 months' },
   { id: '6', challanNumber: 'HR26838230627114380', amount: 1500, violation: 'Without Seatbelt', date: '05 Nov 2023', location: 'NH-8, Manesar', type: 'online', pendingSince: '18 months' },
   { id: '7', challanNumber: 'DL03838230627114381', amount: 0, violation: 'Signal Jump', date: '12 Dec 2023', location: 'ITO Junction, New Delhi', type: 'online', pendingSince: '17 months', disabled: true },
+  { id: '8', challanNumber: 'DL05838230627114382', amount: 3000, violation: 'Overspeeding in restricted zone', date: '18 Jan 2024', location: 'Ring Road, near AIIMS, New Delhi', type: 'court', pendingSince: '16 months', expressEligible: false },
 ]
 
 const MOCK_PAID_CHALLANS: PaidChallan[] = [
@@ -98,18 +99,22 @@ export function StatusPage() {
 
   // Sync the page's mock list into the global store so PaymentPage can read it.
   // On first visit, pre-select all pending challans. On return-navigation, keep
-  // the user's prior selection (intersected with the still-pending list).
+  // the user's prior selection and add any newly-added pending challans to it.
   useEffect(() => {
     const pending = MOCK_CHALLANS.filter((c) => !submittedIdSet.has(c.id))
     setChallansInStore(pending)
     const selectableIds = pending.filter((c) => !c.disabled).map((c) => c.id)
     const selectableIdSet = new Set(selectableIds)
-    const persisted = useChallanStore.getState().selectedChallanIds
-    const restored = persisted.filter((id) => selectableIdSet.has(id))
-    if (restored.length > 0) {
-      if (restored.length !== persisted.length) selectAllInStore(restored)
-    } else {
+    const persistedSet = new Set(useChallanStore.getState().selectedChallanIds)
+    if (persistedSet.size === 0) {
       selectAllInStore(selectableIds)
+    } else {
+      const restored = [...persistedSet].filter((id) => selectableIdSet.has(id))
+      const missing = selectableIds.filter((id) => !persistedSet.has(id))
+      const next = Array.from(new Set([...restored, ...missing]))
+      if (next.length !== persistedSet.size || next.some((id) => !persistedSet.has(id))) {
+        selectAllInStore(next)
+      }
     }
     // Run once on mount; later edits don't reset selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
