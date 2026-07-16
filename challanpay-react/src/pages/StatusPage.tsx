@@ -486,7 +486,7 @@ export function StatusPage() {
                       className={cn(
                         'relative bg-white rounded-xl border pt-8 px-5 pb-5 transition-all',
                         challan.disabled
-                          ? 'border-border shadow-sm opacity-60'
+                          ? 'border-border shadow-sm'
                           : challan.reportedByUser
                             ? selectedIdsSet.has(challan.id)
                               ? 'border-amber-400 shadow-md'

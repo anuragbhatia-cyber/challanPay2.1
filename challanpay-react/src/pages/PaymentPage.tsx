@@ -472,17 +472,17 @@ export function PaymentPage() {
                       <li
                         key={c.id}
                         className={cn(
-                          'flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-3 rounded-xl border transition-colors min-w-0',
+                          'flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-4 sm:py-5 rounded-xl border transition-colors min-w-0',
                           isExpress ? 'border-amber-300 bg-amber-50/50' : 'border-gray-300 bg-white',
                           premiumOnly && 'opacity-60'
                         )}
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline gap-2 min-w-0 flex-wrap">
+                          <div className="flex items-baseline gap-x-6 gap-y-1 min-w-0 flex-wrap">
                             <span className="font-mono text-xs text-text-light tabular-nums flex-shrink-0">
                               {idx + 1}.
                             </span>
-                            <span className="font-mono text-xs sm:text-sm text-text-primary truncate min-w-0">
+                            <span className="font-mono font-semibold text-xs sm:text-sm text-text-primary truncate min-w-0">
                               {c.challanNumber}
                             </span>
                             {!premiumOnly && (
@@ -497,7 +497,7 @@ export function PaymentPage() {
                             )}
                           </div>
                           {c.violation && (
-                            <p className="text-xs text-text-light mt-0.5 ml-4 truncate max-w-[220px] sm:max-w-[320px]">{c.violation}</p>
+                            <p className="text-sm text-text-light mt-1 ml-8 sm:ml-9 truncate max-w-[240px] sm:max-w-[360px]">{c.violation}</p>
                           )}
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -634,14 +634,8 @@ export function PaymentPage() {
                               </span>
                             </p>
                             <label className="flex items-center gap-2 flex-shrink-0 cursor-pointer select-none">
-                              <img
-                                src="/images/resolution-premium.png"
-                                alt=""
-                                aria-hidden
-                                className="w-6 h-6 object-contain"
-                              />
                               <span className="text-[11px] sm:text-xs font-semibold text-text-primary whitespace-nowrap">
-                                Switch for Express
+                                Switch all for Express
                               </span>
                               <button
                                 type="button"
@@ -912,7 +906,7 @@ function SummaryBreakdown({ summary, t, onCourtFeeInfo }: SummaryBreakdownProps)
           <span className="text-amber-800 inline-flex items-center gap-1">
             <span className="font-semibold">Express fee</span>
             <span className="text-amber-800/70">
-              {`(${summary.expressCount} x ${EXPRESS_CONVENIENCE_FEE}, 10 days)`}
+              {`(${summary.expressCount} x ${EXPRESS_CONVENIENCE_FEE})`}
             </span>
           </span>
           <span className="font-semibold text-amber-800">₹{formatINR(summary.expressFee)}</span>
