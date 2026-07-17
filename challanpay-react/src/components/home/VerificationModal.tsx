@@ -25,7 +25,7 @@ export function VerificationModal() {
   const otpRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const startResendTimer = () => {
-    setResendTimer(30)
+    setResendTimer(60)
     const interval = setInterval(() => {
       setResendTimer((prev) => {
         if (prev <= 1) { clearInterval(interval); return 0 }
@@ -325,7 +325,7 @@ export function VerificationModal() {
                       <p id="vm-otp-error" role="alert" className="text-xs text-red-500 mt-2 font-body">{error}</p>
                     )}
                     <div className="text-center mt-4">
-                      <p className="text-xs text-text-light">
+                      <p className="text-sm text-text-light">
                         Didn't receive the code?{' '}
                         {resendTimer > 0 ? (
                           <span className="text-text-secondary font-medium">Resend in {resendTimer}s</span>
