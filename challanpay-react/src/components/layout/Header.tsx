@@ -23,13 +23,26 @@ export function Header() {
 
   const isRSPPage = location.pathname === '/road-smart-partners'
 
-  const NAV_LINKS = [
+  const ALL_NAV_LINKS = [
     { label: t.header.roadSmartPartners, href: '/road-smart-partners', badge: t.header.new },
     { label: t.header.howItWorks, href: '/#how-it-works' },
     { label: t.header.support, href: '/#support' },
     { label: t.header.blogs, href: '/blogs' },
     { label: t.header.news, href: '/news' },
   ]
+
+  const RSP_NAV_LINKS: Array<{ label: string; href: string; badge?: string }> = [
+    { label: t.header.howItWorks, href: '/#how-it-works' },
+    { label: t.header.support, href: '/#support' },
+  ]
+
+  const NAV_LINKS: Array<{ label: string; href: string; badge?: string }> = isRSPPage
+    ? RSP_NAV_LINKS
+    : ALL_NAV_LINKS
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'en' ? 'hi' : 'en')
+  }
 
   const handleLogout = () => {
     logout()
@@ -55,16 +68,26 @@ export function Header() {
           />
         </Link>
 
-        {/* Desktop Nav Links — hidden when logged in */}
-        {!userName && (
-          <ul className="hidden md:flex items-center gap-6">
-            {NAV_LINKS.map((link) => (
+        {/* Desktop Nav Links */}
+        <ul className="hidden md:flex items-center gap-6">
+          {NAV_LINKS.map((link) => {
+            const isRSPLink = link.href === '/road-smart-partners'
+            return (
               <li key={link.href}>
                 <Link
                   to={link.href}
                   className="text-base font-medium text-text-primary hover:text-primary transition-colors flex items-center gap-1.5"
+                  aria-label={isRSPLink ? link.label : undefined}
                 >
-                  {link.label}
+                  {isRSPLink ? (
+                    <img
+                      src="/images/rsp-logo.webp"
+                      alt={link.label}
+                      className="h-7 w-auto"
+                    />
+                  ) : (
+                    link.label
+                  )}
                   {link.badge && (
                     <span className="text-[10px] font-bold bg-gradient-to-br from-emerald-500 to-emerald-600 text-white px-1.5 py-0.5 rounded leading-none">
                       {link.badge}
@@ -72,46 +95,74 @@ export function Header() {
                   )}
                 </Link>
               </li>
-            ))}
-          </ul>
-        )}
+            )
+          })}
+        </ul>
 
         {/* Right side: Language + Profile */}
         <div className="hidden md:flex items-center gap-3">
           {/* Language Switcher */}
-          <div className="relative">
+          {isRSPPage ? (
             <button
-              onClick={() => { setIsLangOpen(!isLangOpen); setIsProfileOpen(false) }}
-              className="flex items-center gap-1.5 px-3 min-h-11 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors text-sm font-medium text-text-secondary"
-              aria-label="Switch language"
+              onClick={toggleLanguage}
+              className="flex items-center gap-2.5 min-h-11 px-1 rounded-full transition-colors"
+              aria-label="Toggle language"
+              role="switch"
+              aria-checked={language === 'hi'}
             >
-              <Globe className="w-4 h-4" />
-              {LANGUAGES.find(l => l.code === language)?.short}
-              <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', isLangOpen && 'rotate-180')} />
+              <span
+                className={cn(
+                  'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                  language === 'hi' ? 'bg-primary' : 'bg-gray-300'
+                )}
+              >
+                <span
+                  className={cn(
+                    'inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform',
+                    language === 'hi' ? 'translate-x-[22px]' : 'translate-x-0.5'
+                  )}
+                />
+              </span>
+              <span className="text-base font-medium text-text-primary">
+                {LANGUAGES.find(l => l.code === language)?.label}
+              </span>
             </button>
+          ) : (
+            <div className="relative">
+              <button
+                onClick={() => { setIsLangOpen(!isLangOpen); setIsProfileOpen(false) }}
+                className="flex items-center gap-1.5 px-3 min-h-11 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors text-sm font-medium text-text-secondary"
+                aria-label="Switch language"
+              >
+                <Globe className="w-4 h-4" />
+                {LANGUAGES.find(l => l.code === language)?.short}
+                <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', isLangOpen && 'rotate-180')} />
+              </button>
 
-            {isLangOpen && (
-              <div className="absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-lg border border-border py-1 animate-slide-down">
-                {LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.code}
-                    onClick={() => handleLangChange(lang.code)}
-                    className={cn(
-                      'flex items-center justify-between w-full px-4 py-3 min-h-11 text-sm transition-colors',
-                      language === lang.code
-                        ? 'text-primary font-semibold bg-primary/5'
-                        : 'text-text-secondary hover:bg-gray-50'
-                    )}
-                  >
-                    {lang.label}
+              {isLangOpen && (
+                <div className="absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-lg border border-border py-1 animate-slide-down">
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => handleLangChange(lang.code)}
+                      className={cn(
+                        'flex items-center justify-between w-full px-4 py-3 min-h-11 text-sm transition-colors',
+                        language === lang.code
+                          ? 'text-primary font-semibold bg-primary/5'
+                          : 'text-text-secondary hover:bg-gray-50'
+                      )}
+                    >
+                      {lang.label}
 
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* User Profile */}
+          {/* User Profile — hidden on RSP page */}
+          {!isRSPPage && (
           <div className="relative">
           <button
             onClick={() => setIsProfileOpen(!isProfileOpen)}
@@ -160,6 +211,7 @@ export function Header() {
             </div>
           )}
           </div>
+          )}
         </div>
 
         {/* Hamburger Button */}
@@ -208,22 +260,34 @@ export function Header() {
           </button>
         </div>
         <ul className="px-4 py-4 space-y-1">
-          {NAV_LINKS.map((link) => (
-            <li key={link.href}>
-              <Link
-                to={link.href}
-                className="block px-4 py-3.5 rounded-lg text-lg font-medium text-text-primary hover:bg-gray-50 transition-colors"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {link.label}
-                {link.badge && (
-                  <span className="ml-2 text-[11px] font-bold bg-gradient-to-br from-emerald-500 to-emerald-600 text-white px-1.5 py-0.5 rounded">
-                    {link.badge}
-                  </span>
-                )}
-              </Link>
-            </li>
-          ))}
+          {NAV_LINKS.map((link) => {
+            const isRSPLink = link.href === '/road-smart-partners'
+            return (
+              <li key={link.href}>
+                <Link
+                  to={link.href}
+                  className="flex items-center gap-2 px-4 py-3.5 rounded-lg text-lg font-medium text-text-primary hover:bg-gray-50 transition-colors"
+                  aria-label={isRSPLink ? link.label : undefined}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {isRSPLink ? (
+                    <img
+                      src="/images/rsp-logo.webp"
+                      alt={link.label}
+                      className="h-8 w-auto"
+                    />
+                  ) : (
+                    link.label
+                  )}
+                  {link.badge && (
+                    <span className="text-[11px] font-bold bg-gradient-to-br from-emerald-500 to-emerald-600 text-white px-1.5 py-0.5 rounded">
+                      {link.badge}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            )
+          })}
         </ul>
 
         {/* Mobile Language Switcher */}
