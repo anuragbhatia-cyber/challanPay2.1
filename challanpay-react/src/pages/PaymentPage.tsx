@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
-import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check, Clock, Sparkles } from 'lucide-react'
+import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { Skeleton } from '@/components/shared/Skeleton'
@@ -240,10 +240,10 @@ export function PaymentPage() {
 
             <div className="bg-gradient-to-b from-gray-50 via-gray-50/40 to-white pt-8 pb-4 px-6 text-left">
               <h3 className="font-display text-xl font-bold text-text-primary mb-2">
-                Not eligible for Express
+                Not eligible for XPress
               </h3>
               <p className="text-base leading-relaxed text-text-primary">
-                This challan requires standard court dispute timelines and is ineligible for Express resolution.
+                This challan requires standard court dispute timelines and is ineligible for XPress resolution.
               </p>
             </div>
 
@@ -572,13 +572,13 @@ export function PaymentPage() {
                                     className="w-6 h-6 sm:w-8 sm:h-8 object-contain"
                                   />
                                 )}
-                                {isExpress ? 'Express: 10 Days' : '45 Days'}
+                                {isExpress ? 'XPress: 10 Days' : '45 Days'}
                               </span>
                               <button
                                 type="button"
                                 role="switch"
                                 aria-checked={isExpress}
-                                aria-label={`Express delivery for challan ${c.challanNumber}`}
+                                aria-label={`XPress delivery for challan ${c.challanNumber}`}
                                 onClick={() => toggleRowExpress(c.id)}
                                 className={cn(
                                   'relative flex-shrink-0 h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
@@ -602,7 +602,7 @@ export function PaymentPage() {
                               <button
                                 type="button"
                                 onClick={() => setShowExpressIneligibleInfo(true)}
-                                aria-label="Why is Express not available?"
+                                aria-label="Why is XPress not available?"
                                 className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full text-text-light hover:text-text-primary hover:bg-gray-200 transition-colors"
                               >
                                 <Info className="w-3.5 h-3.5" />
@@ -613,7 +613,7 @@ export function PaymentPage() {
                                 aria-checked={false}
                                 aria-disabled
                                 disabled
-                                aria-label={`Express delivery not available for challan ${c.challanNumber}`}
+                                aria-label={`XPress delivery not available for challan ${c.challanNumber}`}
                                 className="relative flex-shrink-0 h-5 w-9 sm:h-6 sm:w-11 rounded-full bg-gray-200 opacity-70 cursor-not-allowed"
                               >
                                 <span className="absolute top-0.5 left-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white shadow-sm" />
@@ -685,7 +685,7 @@ export function PaymentPage() {
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-3">
                             <p className="text-sm sm:text-base text-text-primary inline-flex flex-wrap items-center gap-2">
                               <span>
-                                {`${expressEligibleCount} ${expressEligibleCount === 1 ? 'challan is' : 'challans are'} eligible for express delivery`}
+                                {`${expressEligibleCount} ${expressEligibleCount === 1 ? 'challan is' : 'challans are'} eligible for XPress delivery`}
                               </span>
                               <span className="inline-flex items-center text-xs sm:text-sm font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
                                 10-days resolution
@@ -694,10 +694,10 @@ export function PaymentPage() {
                             <button
                               type="button"
                               onClick={toggleAllExpress}
-                              aria-label={allExpressOn ? 'Switch all to Regular' : 'Switch all to Express'}
-                              className="text-xs sm:text-sm font-semibold text-text-primary hover:text-black transition-colors whitespace-nowrap self-end sm:self-auto sm:flex-shrink-0"
+                              aria-label={allExpressOn ? 'Switch all to Regular' : 'Switch all to XPress'}
+                              className="text-xs sm:text-sm font-semibold text-cyan-700 hover:text-cyan-800 underline underline-offset-2 transition-colors whitespace-nowrap self-end sm:self-auto sm:flex-shrink-0"
                             >
-                              {allExpressOn ? 'Switch all to Regular' : 'Switch all to Express'}
+                              {allExpressOn ? 'Switch all to Regular' : 'Switch all to XPress'}
                             </button>
                           </div>
                         )
@@ -751,9 +751,8 @@ export function PaymentPage() {
                 })()}
               </h3>
 
-              <hr className="border-border mb-4" />
-
               <div className="rounded-xl border border-border p-4 space-y-3.5">
+                <h4 className="font-display font-semibold text-sm text-text-primary">Regular Challans</h4>
                 <RegularSummary
                   summary={displaySummary}
                   t={t}
@@ -770,7 +769,7 @@ export function PaymentPage() {
                   <>
                     <hr className="border-border" />
                     <div className="flex justify-between items-baseline">
-                      <span className="font-display text-[13px] font-bold text-text-primary">Total Amount</span>
+                      <span className="font-display text-[13px] font-bold text-text-primary">Subtotal</span>
                       <span className="font-display text-sm font-bold text-text-primary">
                         ₹{formatINR(Math.max(0, regularBlockTotal(displaySummary) - (pledgeActive ? PLEDGE_REWARD : 0)))}
                       </span>
@@ -780,7 +779,11 @@ export function PaymentPage() {
               </div>
 
               {displaySummary.expressCount > 0 && (
-                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/40 p-4 space-y-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="font-display font-semibold text-sm text-amber-900">XPress Challans</h4>
+                    <ResolutionBadge />
+                  </div>
                   <ExpressSummary summary={displaySummary} />
                 </div>
               )}
@@ -872,6 +875,7 @@ export function PaymentPage() {
             <hr className="border-border" />
 
             <div className="rounded-xl border border-border p-4 space-y-3.5">
+              <h4 className="font-display font-semibold text-sm text-text-primary">Regular Challans</h4>
               <RegularSummary
                 summary={displaySummary}
                 t={t}
@@ -898,7 +902,11 @@ export function PaymentPage() {
             </div>
 
             {displaySummary.expressCount > 0 && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+              <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 space-y-3.5">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-display font-semibold text-sm text-amber-900">XPress Challans</h4>
+                  <ResolutionBadge />
+                </div>
                 <ExpressSummary summary={displaySummary} />
               </div>
             )}
@@ -1015,7 +1023,7 @@ function ExpressSummary({ summary }: { summary: SummaryBreakdownProps['summary']
     <div className="space-y-0.5">
       <div className="flex justify-between text-[13px]">
         <span className="font-display font-semibold text-amber-800">
-          {`Express Challan (${summary.expressCount})`}
+          {`XPress Challan (${summary.expressCount})`}
         </span>
         <span className="font-display font-semibold text-amber-800">
           ₹{formatINR(summary.expressCourtAmount)}
@@ -1023,19 +1031,27 @@ function ExpressSummary({ summary }: { summary: SummaryBreakdownProps['summary']
       </div>
       <div className="flex justify-between text-[13px]">
         <span className="text-amber-800/80 inline-flex items-center gap-1">
-          Express fee
+          XPress fee
           <span className="text-amber-800/60">
             {`(${summary.expressCount} x ${EXPRESS_CONVENIENCE_FEE})`}
           </span>
         </span>
         <span className="font-medium text-amber-800">₹{formatINR(summary.expressFee)}</span>
       </div>
-      <div className="pt-2">
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-black bg-amber-50 px-2.5 py-1 rounded-full">
-          <Sparkles className="w-3.5 h-3.5 text-amber-600" aria-hidden />
-          Resolution in 10 Days
-        </span>
-      </div>
     </div>
+  )
+}
+
+function ResolutionBadge() {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-black whitespace-nowrap">
+      <img
+        src="/images/resolution-premium.png"
+        alt=""
+        aria-hidden
+        className="w-5 h-5 object-contain"
+      />
+      Resolution in 10 Days
+    </span>
   )
 }
