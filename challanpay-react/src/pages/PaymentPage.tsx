@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
-import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check, Clock } from 'lucide-react'
+import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check, Clock, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { Skeleton } from '@/components/shared/Skeleton'
@@ -12,6 +12,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion'
 import { usePageState } from '@/hooks/usePageState'
 import {
   useChallanStore,
+  ONLINE_CONVENIENCE_FEE,
   COURT_CONVENIENCE_FEE,
   EXPRESS_CONVENIENCE_FEE,
   PLEDGE_REWARD,
@@ -55,13 +56,18 @@ export function PaymentPage() {
     const onlineAmount = online.reduce((sum, c) => sum + c.amount, 0)
     const courtAmount = court.reduce((sum, c) => sum + c.amount, 0)
 
-    // Online challans are always 45-day resolution; only court challans marked
-    // as express-eligible can opt into Express (10 days).
-    const expressCount = court.filter((c) => c.expressEligible !== false && !regularIds.has(c.id)).length
-    const regularCount = effectiveChallans.length - expressCount
+    // Online challans always pay the online convenience fee. Court challans
+    // pay a regular fee unless they've opted into Express (10 days).
+    const expressCourt = court.filter((c) => c.expressEligible !== false && !regularIds.has(c.id))
+    const regularCourt = court.filter((c) => !expressCourt.includes(c))
+    const expressCount = expressCourt.length
+    const regularCourtCount = regularCourt.length
+    const regularCourtAmount = regularCourt.reduce((sum, c) => sum + c.amount, 0)
+    const expressCourtAmount = expressCourt.reduce((sum, c) => sum + c.amount, 0)
+    const onlineFee = online.length * ONLINE_CONVENIENCE_FEE
+    const regularFee = regularCourtCount * COURT_CONVENIENCE_FEE
     const expressFee = expressCount * EXPRESS_CONVENIENCE_FEE
-    const regularFee = regularCount * COURT_CONVENIENCE_FEE
-    const totalFee = expressFee + regularFee
+    const totalFee = onlineFee + regularFee + expressFee
     const subtotal = onlineAmount + courtAmount + totalFee
 
     return {
@@ -69,10 +75,13 @@ export function PaymentPage() {
       courtCount: court.length,
       onlineAmount,
       courtAmount,
-      expressCount,
-      regularCount,
-      expressFee,
+      onlineFee,
+      regularCourtCount,
+      regularCourtAmount,
       regularFee,
+      expressCount,
+      expressCourtAmount,
+      expressFee,
       totalFee,
       subtotal,
     }
@@ -85,6 +94,7 @@ export function PaymentPage() {
   const [showBackConfirm, setShowBackConfirm] = useState(false)
   const [legalChargesInfo, setLegalChargesInfo] = useState<'online' | 'court' | null>(null)
   const [showIneligibleInfo, setShowIneligibleInfo] = useState(false)
+  const [showExpressIneligibleInfo, setShowExpressIneligibleInfo] = useState(false)
   const [showAllIneligible, setShowAllIneligible] = useState(false)
 
   const pledgeActive = pledgeChecked && !isPremium
@@ -95,6 +105,7 @@ export function PaymentPage() {
   useModalA11y(legalChargesInfo !== null, () => setLegalChargesInfo(null))
   useModalA11y(showBackConfirm, () => setShowBackConfirm(false))
   useModalA11y(showIneligibleInfo, () => setShowIneligibleInfo(false))
+  useModalA11y(showExpressIneligibleInfo, () => setShowExpressIneligibleInfo(false))
 
   const prefersReducedMotion = useReducedMotion()
 
@@ -200,6 +211,45 @@ export function PaymentPage() {
             <div className="px-6 pt-4 pb-6">
               <button
                 onClick={() => setShowIneligibleInfo(false)}
+                className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm shadow-sm"
+              >
+                {t.payment.gotIt}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Express-Ineligible Row Info Modal */}
+      {showExpressIneligibleInfo && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShowExpressIneligibleInfo(false)}
+        >
+          <div
+            className="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowExpressIneligibleInfo(false)}
+              className="absolute top-2 right-2 z-10 w-11 h-11 rounded-full bg-white/80 flex items-center justify-center text-gray-500 hover:bg-white transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="bg-gradient-to-b from-gray-50 via-gray-50/40 to-white pt-8 pb-4 px-6 text-left">
+              <h3 className="font-display text-xl font-bold text-text-primary mb-2">
+                Not eligible for Express
+              </h3>
+              <p className="text-base leading-relaxed text-text-primary">
+                This challan requires standard court dispute timelines and is ineligible for Express resolution.
+              </p>
+            </div>
+
+            <div className="px-6 pt-4 pb-6">
+              <button
+                onClick={() => setShowExpressIneligibleInfo(false)}
                 className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm shadow-sm"
               >
                 {t.payment.gotIt}
@@ -478,7 +528,7 @@ export function PaymentPage() {
                         )}
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline gap-x-6 gap-y-1 min-w-0 flex-wrap">
+                          <div className="flex items-baseline gap-x-3 sm:gap-x-6 gap-y-1 min-w-0 flex-nowrap sm:flex-wrap">
                             <span className="font-mono text-xs text-text-light tabular-nums flex-shrink-0">
                               {idx + 1}.
                             </span>
@@ -497,7 +547,7 @@ export function PaymentPage() {
                             )}
                           </div>
                           {c.violation && (
-                            <p className="text-sm text-text-light mt-1 ml-8 sm:ml-9 truncate max-w-[240px] sm:max-w-[360px]">{c.violation}</p>
+                            <p className="text-sm text-text-light mt-1 ml-6 sm:ml-9 truncate max-w-[200px] sm:max-w-[360px]">{c.violation}</p>
                           )}
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
@@ -519,7 +569,7 @@ export function PaymentPage() {
                                     src="/images/resolution-premium.png"
                                     alt=""
                                     aria-hidden
-                                    className="w-8 h-8 object-contain"
+                                    className="w-6 h-6 sm:w-8 sm:h-8 object-contain"
                                   />
                                 )}
                                 {isExpress ? 'Express: 10 Days' : '45 Days'}
@@ -531,24 +581,32 @@ export function PaymentPage() {
                                 aria-label={`Express delivery for challan ${c.challanNumber}`}
                                 onClick={() => toggleRowExpress(c.id)}
                                 className={cn(
-                                  'relative flex-shrink-0 h-6 w-11 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+                                  'relative flex-shrink-0 h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
                                   isExpress ? 'bg-emerald-500' : 'bg-gray-300'
                                 )}
                               >
                                 <span
                                   className={cn(
-                                    'absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200',
-                                    isExpress ? 'translate-x-5' : 'translate-x-0'
+                                    'absolute top-0.5 left-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white shadow-md transition-transform duration-200',
+                                    isExpress ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
                                   )}
                                 />
                               </button>
                             </div>
                           ) : isCourt ? (
-                            <div className="inline-flex items-center gap-2 pl-2 pr-1 py-1 rounded-full bg-gray-100">
+                            <div className="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full bg-gray-100">
                               <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-text-secondary whitespace-nowrap">
                                 <Clock className="w-3 h-3" aria-hidden />
                                 45 Days
                               </span>
+                              <button
+                                type="button"
+                                onClick={() => setShowExpressIneligibleInfo(true)}
+                                aria-label="Why is Express not available?"
+                                className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full text-text-light hover:text-text-primary hover:bg-gray-200 transition-colors"
+                              >
+                                <Info className="w-3.5 h-3.5" />
+                              </button>
                               <button
                                 type="button"
                                 role="switch"
@@ -556,9 +614,9 @@ export function PaymentPage() {
                                 aria-disabled
                                 disabled
                                 aria-label={`Express delivery not available for challan ${c.challanNumber}`}
-                                className="relative flex-shrink-0 h-6 w-11 rounded-full bg-gray-200 opacity-70 cursor-not-allowed"
+                                className="relative flex-shrink-0 h-5 w-9 sm:h-6 sm:w-11 rounded-full bg-gray-200 opacity-70 cursor-not-allowed"
                               >
-                                <span className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm" />
+                                <span className="absolute top-0.5 left-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white shadow-sm" />
                               </button>
                             </div>
                           ) : (
@@ -624,7 +682,7 @@ export function PaymentPage() {
                             return next
                           })
                         return (
-                          <div className="flex items-center justify-between gap-3 mb-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-3">
                             <p className="text-sm sm:text-base text-text-primary inline-flex flex-wrap items-center gap-2">
                               <span>
                                 {`${expressEligibleCount} ${expressEligibleCount === 1 ? 'challan is' : 'challans are'} eligible for express delivery`}
@@ -633,29 +691,14 @@ export function PaymentPage() {
                                 10-days resolution
                               </span>
                             </p>
-                            <label className="flex items-center gap-2 flex-shrink-0 cursor-pointer select-none">
-                              <span className="text-[11px] sm:text-xs font-semibold text-text-primary whitespace-nowrap">
-                                Switch all for Express
-                              </span>
-                              <button
-                                type="button"
-                                role="switch"
-                                aria-checked={allExpressOn}
-                                aria-label="Switch all eligible challans to express delivery"
-                                onClick={toggleAllExpress}
-                                className={cn(
-                                  'relative flex-shrink-0 h-6 w-11 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
-                                  allExpressOn ? 'bg-emerald-500' : 'bg-gray-300'
-                                )}
-                              >
-                                <span
-                                  className={cn(
-                                    'absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200',
-                                    allExpressOn ? 'translate-x-5' : 'translate-x-0'
-                                  )}
-                                />
-                              </button>
-                            </label>
+                            <button
+                              type="button"
+                              onClick={toggleAllExpress}
+                              aria-label={allExpressOn ? 'Switch all to Regular' : 'Switch all to Express'}
+                              className="text-xs sm:text-sm font-semibold text-text-primary hover:text-black transition-colors whitespace-nowrap self-end sm:self-auto sm:flex-shrink-0"
+                            >
+                              {allExpressOn ? 'Switch all to Regular' : 'Switch all to Express'}
+                            </button>
                           </div>
                         )
                       })()}
@@ -710,17 +753,35 @@ export function PaymentPage() {
 
               <hr className="border-border mb-4" />
 
-              <SummaryBreakdown
-                summary={displaySummary}
-                t={t}
-                onCourtFeeInfo={() => setLegalChargesInfo('court')}
-              />
+              <div className="rounded-xl border border-border p-4 space-y-3.5">
+                <RegularSummary
+                  summary={displaySummary}
+                  t={t}
+                  onOnlineFeeInfo={() => setLegalChargesInfo('online')}
+                  onCourtFeeInfo={() => setLegalChargesInfo('court')}
+                />
+                {pledgeActive && (
+                  <div className="flex justify-between text-sm bg-emerald-50 -mx-4 px-4 py-2.5 rounded-lg">
+                    <span className="font-display font-semibold text-success">{t.payment.pledgeReward}</span>
+                    <span className="font-display font-semibold text-success">-₹{formatINR(PLEDGE_REWARD)}</span>
+                  </div>
+                )}
+                {regularBlockTotal(displaySummary) > 0 && (
+                  <>
+                    <hr className="border-border" />
+                    <div className="flex justify-between items-baseline">
+                      <span className="font-display text-[13px] font-bold text-text-primary">Total Amount</span>
+                      <span className="font-display text-sm font-bold text-text-primary">
+                        ₹{formatINR(Math.max(0, regularBlockTotal(displaySummary) - (pledgeActive ? PLEDGE_REWARD : 0)))}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
 
-              {/* Pledge Reward */}
-              {pledgeActive && (
-                <div className="flex justify-between text-sm mt-3.5 bg-emerald-50 -mx-6 px-6 py-2.5">
-                  <span className="font-display font-semibold text-success">{t.payment.pledgeReward}</span>
-                  <span className="font-display font-semibold text-success">-₹{formatINR(PLEDGE_REWARD)}</span>
+              {displaySummary.expressCount > 0 && (
+                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+                  <ExpressSummary summary={displaySummary} />
                 </div>
               )}
 
@@ -810,16 +871,35 @@ export function PaymentPage() {
           <div className="px-4 pb-4 space-y-3">
             <hr className="border-border" />
 
-            <SummaryBreakdown
-              summary={displaySummary}
-              t={t}
-              onCourtFeeInfo={() => setLegalChargesInfo('court')}
-            />
+            <div className="rounded-xl border border-border p-4 space-y-3.5">
+              <RegularSummary
+                summary={displaySummary}
+                t={t}
+                onOnlineFeeInfo={() => setLegalChargesInfo('online')}
+                onCourtFeeInfo={() => setLegalChargesInfo('court')}
+              />
+              {pledgeActive && (
+                <div className="flex justify-between text-sm bg-emerald-50 -mx-4 px-4 py-2.5 rounded-lg">
+                  <span className="font-display font-semibold text-success">{t.payment.pledgeReward}</span>
+                  <span className="font-display font-semibold text-success">-₹{formatINR(PLEDGE_REWARD)}</span>
+                </div>
+              )}
+              {regularBlockTotal(displaySummary) > 0 && (
+                <>
+                  <hr className="border-border" />
+                  <div className="flex justify-between items-baseline">
+                    <span className="font-display text-[13px] font-bold text-text-primary">Total Amount</span>
+                    <span className="font-display text-sm font-bold text-text-primary">
+                      ₹{formatINR(Math.max(0, regularBlockTotal(displaySummary) - (pledgeActive ? PLEDGE_REWARD : 0)))}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
 
-            {pledgeActive && (
-              <div className="flex justify-between text-sm bg-emerald-50 -mx-4 px-4 py-2.5">
-                <span className="font-display font-semibold text-success">{t.payment.pledgeReward}</span>
-                <span className="font-display font-semibold text-success">-₹{formatINR(PLEDGE_REWARD)}</span>
+            {displaySummary.expressCount > 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
+                <ExpressSummary summary={displaySummary} />
               </div>
             )}
 
@@ -844,74 +924,118 @@ export function PaymentPage() {
 type SummaryBreakdownProps = {
   summary: {
     onlineCount: number
-    courtCount: number
     onlineAmount: number
-    courtAmount: number
-    expressCount: number
-    regularCount: number
-    expressFee: number
+    onlineFee: number
+    regularCourtCount: number
+    regularCourtAmount: number
     regularFee: number
+    expressCount: number
+    expressCourtAmount: number
+    expressFee: number
   }
   t: ReturnType<typeof useTranslation>['t']
+  onOnlineFeeInfo: () => void
   onCourtFeeInfo: () => void
 }
 
-function SummaryBreakdown({ summary, t, onCourtFeeInfo }: SummaryBreakdownProps) {
+function RegularSummary({ summary, t, onOnlineFeeInfo, onCourtFeeInfo }: SummaryBreakdownProps) {
   return (
     <div className="space-y-3.5">
       {summary.onlineCount > 0 && (
-        <div className="flex justify-between text-[13px]">
-          <span className="font-display font-semibold text-text-primary">
-            {`${t.payment.onlineChallan} (${summary.onlineCount})`}
-          </span>
-          <span className="font-display font-semibold text-text-primary">
-            ₹{formatINR(summary.onlineAmount)}
-          </span>
-        </div>
-      )}
-
-      {summary.courtCount > 0 && (
-        <div className="flex justify-between text-[13px]">
-          <span className="font-display font-semibold text-text-primary">
-            {`${t.payment.courtChallan} (${summary.courtCount})`}
-          </span>
-          <span className="font-display font-semibold text-text-primary">
-            ₹{formatINR(summary.courtAmount)}
-          </span>
-        </div>
-      )}
-
-      {summary.regularCount > 0 && (
-        <div className="flex justify-between text-[13px]">
-          <span className="text-text-light inline-flex items-center gap-1">
-            {t.payment.convenienceFee}
-            <span className="text-text-light/70">
-              {`(${summary.regularCount} x ${COURT_CONVENIENCE_FEE})`}
+        <div className="space-y-0.5">
+          <div className="flex justify-between text-[13px]">
+            <span className="font-display font-semibold text-text-primary">
+              {`${t.payment.onlineChallan} (${summary.onlineCount})`}
             </span>
-            <button
-              type="button"
-              onClick={onCourtFeeInfo}
-              aria-label={t.payment.courtLegalFeeTitle}
-              className="inline-flex items-center justify-center w-9 h-9 -m-2.5 rounded-full text-text-light/80 hover:text-primary transition-colors"
-            >
-              <Info className="w-3.5 h-3.5" />
-            </button>
-          </span>
-          <span className="font-medium text-text-light">₹{formatINR(summary.regularFee)}</span>
+            <span className="font-display font-semibold text-text-primary">
+              ₹{formatINR(summary.onlineAmount)}
+            </span>
+          </div>
+          <div className="flex justify-between text-[13px]">
+            <span className="text-text-light inline-flex items-center gap-1">
+              {t.payment.convenienceFee}
+              <span className="text-text-light/70">
+                {`(${summary.onlineCount} x ${ONLINE_CONVENIENCE_FEE})`}
+              </span>
+              <button
+                type="button"
+                onClick={onOnlineFeeInfo}
+                aria-label={t.payment.onlineLegalFeeTitle}
+                className="inline-flex items-center justify-center w-9 h-9 -m-2.5 rounded-full text-text-light/80 hover:text-primary transition-colors"
+              >
+                <Info className="w-3.5 h-3.5" />
+              </button>
+            </span>
+            <span className="font-medium text-text-light">₹{formatINR(summary.onlineFee)}</span>
+          </div>
         </div>
       )}
 
-      {summary.expressCount > 0 && (
-        <div className="flex justify-between text-[13px]">
-          <span className="text-amber-800 inline-flex items-center gap-1">
-            <span className="font-semibold">Express fee</span>
-            <span className="text-amber-800/70">
-              {`(${summary.expressCount} x ${EXPRESS_CONVENIENCE_FEE})`}
+      {summary.regularCourtCount > 0 && (
+        <div className="space-y-0.5">
+          <div className="flex justify-between text-[13px]">
+            <span className="font-display font-semibold text-text-primary">
+              {`${t.payment.courtChallan} (${summary.regularCourtCount})`}
             </span>
-          </span>
-          <span className="font-semibold text-amber-800">₹{formatINR(summary.expressFee)}</span>
+            <span className="font-display font-semibold text-text-primary">
+              ₹{formatINR(summary.regularCourtAmount)}
+            </span>
+          </div>
+          <div className="flex justify-between text-[13px]">
+            <span className="text-text-light inline-flex items-center gap-1">
+              {t.payment.convenienceFee}
+              <span className="text-text-light/70">
+                {`(${summary.regularCourtCount} x ${COURT_CONVENIENCE_FEE})`}
+              </span>
+              <button
+                type="button"
+                onClick={onCourtFeeInfo}
+                aria-label={t.payment.courtLegalFeeTitle}
+                className="inline-flex items-center justify-center w-9 h-9 -m-2.5 rounded-full text-text-light/80 hover:text-primary transition-colors"
+              >
+                <Info className="w-3.5 h-3.5" />
+              </button>
+            </span>
+            <span className="font-medium text-text-light">₹{formatINR(summary.regularFee)}</span>
+          </div>
         </div>
       )}
+
+    </div>
+  )
+}
+
+function regularBlockTotal(summary: SummaryBreakdownProps['summary']) {
+  return summary.onlineAmount + summary.onlineFee + summary.regularCourtAmount + summary.regularFee
+}
+
+function ExpressSummary({ summary }: { summary: SummaryBreakdownProps['summary'] }) {
+  if (summary.expressCount === 0) return null
+  return (
+    <div className="space-y-0.5">
+      <div className="flex justify-between text-[13px]">
+        <span className="font-display font-semibold text-amber-800">
+          {`Express Challan (${summary.expressCount})`}
+        </span>
+        <span className="font-display font-semibold text-amber-800">
+          ₹{formatINR(summary.expressCourtAmount)}
+        </span>
+      </div>
+      <div className="flex justify-between text-[13px]">
+        <span className="text-amber-800/80 inline-flex items-center gap-1">
+          Express fee
+          <span className="text-amber-800/60">
+            {`(${summary.expressCount} x ${EXPRESS_CONVENIENCE_FEE})`}
+          </span>
+        </span>
+        <span className="font-medium text-amber-800">₹{formatINR(summary.expressFee)}</span>
+      </div>
+      <div className="pt-2">
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-black bg-amber-50 px-2.5 py-1 rounded-full">
+          <Sparkles className="w-3.5 h-3.5 text-amber-600" aria-hidden />
+          Resolution in 10 Days
+        </span>
+      </div>
     </div>
   )
 }
