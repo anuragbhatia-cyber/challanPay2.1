@@ -147,9 +147,9 @@ export function HeroSection() {
 
                 <div className="mt-0 flex flex-col items-center text-center py-2 px-6 rounded-2xl bg-[radial-gradient(ellipse_65%_90%_at_50%_50%,rgba(8,145,178,0.32)_0%,rgba(8,145,178,0.12)_45%,transparent_75%)]">
                   <span className="font-display text-2xl md:text-3xl font-bold text-primary">
-                    ₹70 Crore+
+                    ₹75 Crore+
                   </span>
-                  <span className="font-body text-base text-primary-dark mt-0.5">
+                  <span className="font-body font-medium text-base text-primary-dark mt-0.5">
                     Savings on Legal Fees
                   </span>
                 </div>

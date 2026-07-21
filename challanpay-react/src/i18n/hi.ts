@@ -23,7 +23,7 @@ export const hi: TranslationKeys = {
     free: 'मुफ़्त जाँच',
     placeholder: 'वाहन नंबर दर्ज करें',
     checkChallans: 'चालान जाँचें',
-    savingsAmount: '70 करोड़+',
+    savingsAmount: '75 करोड़+',
     savingsText: 'कानूनी शुल्क पर बचत, भारत के जिम्मेदार नागरिकों द्वारा विश्वसनीय।',
   },
 

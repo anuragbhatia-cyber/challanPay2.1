@@ -21,7 +21,7 @@ export const en = {
     free: 'Free Check',
     placeholder: 'Enter Vehicle Number',
     checkChallans: 'Check Challans',
-    savingsAmount: '70 Crore+',
+    savingsAmount: '75 Crore+',
     savingsText: "Savings on Legal Fees, trusted by India's responsible citizens.",
   },
 
