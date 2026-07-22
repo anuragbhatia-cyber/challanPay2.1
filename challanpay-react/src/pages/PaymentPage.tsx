@@ -96,8 +96,12 @@ export function PaymentPage() {
   const [showIneligibleInfo, setShowIneligibleInfo] = useState(false)
   const [showExpressIneligibleInfo, setShowExpressIneligibleInfo] = useState(false)
   const [showAllIneligible, setShowAllIneligible] = useState(false)
+  const [showXpressWelcome, setShowXpressWelcome] = useState(() =>
+    effectiveChallans.some((c) => c.type === 'court' && c.expressEligible !== false),
+  )
+  const [showOnlineChallans, setShowOnlineChallans] = useState(false)
 
-  const pledgeActive = pledgeChecked && !isPremium
+  const pledgeActive = pledgeChecked && !isPremium && displaySummary.expressCount === 0
   const payNowTotal = pledgeActive ? Math.max(0, displaySummary.subtotal - PLEDGE_REWARD) : displaySummary.subtotal
   const effectiveChallanIds = useMemo(() => effectiveChallans.map((c) => c.id), [effectiveChallans])
   const selectedCount = effectiveChallanIds.length
@@ -106,6 +110,7 @@ export function PaymentPage() {
   useModalA11y(showBackConfirm, () => setShowBackConfirm(false))
   useModalA11y(showIneligibleInfo, () => setShowIneligibleInfo(false))
   useModalA11y(showExpressIneligibleInfo, () => setShowExpressIneligibleInfo(false))
+  useModalA11y(showXpressWelcome, () => setShowXpressWelcome(false))
 
   const prefersReducedMotion = useReducedMotion()
 
@@ -214,6 +219,77 @@ export function PaymentPage() {
                 className="w-full py-3.5 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors text-sm shadow-sm"
               >
                 {t.payment.gotIt}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* XPress Welcome Modal — shown on first arrival when court challans are eligible */}
+      {showXpressWelcome && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          onClick={() => setShowXpressWelcome(false)}
+        >
+          <div
+            className="relative w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowXpressWelcome(false)}
+              className="absolute top-2 right-2 z-10 w-11 h-11 rounded-full bg-white/80 flex items-center justify-center text-gray-500 hover:bg-white transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="bg-gradient-to-b from-cyan-50 via-cyan-50/40 to-white pt-8 pb-4 px-6 text-left">
+              <div className="flex items-center gap-2.5 mb-2">
+                <img
+                  src="/images/resolution-premium.png"
+                  alt=""
+                  aria-hidden
+                  className="w-8 h-8 object-contain"
+                />
+                <h3 className="font-display text-xl font-bold">
+                  <span className="text-text-primary">ChallanPay </span>
+                  <span className="bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
+                    XPress
+                  </span>
+                </h3>
+              </div>
+              <p className="text-base leading-relaxed text-text-primary">
+                Your challans are eligible for XPress Resolution.
+              </p>
+            </div>
+
+            <div className="px-6 py-4 space-y-3">
+              <div className="flex items-center gap-3 rounded-xl bg-emerald-50/60 border border-emerald-100 p-3.5">
+                <span className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100">
+                  <Clock className="w-5 h-5 text-emerald-700" />
+                </span>
+                <p className="font-display font-semibold text-text-primary">10 Days Resolution</p>
+              </div>
+              <div className="flex items-center gap-3 rounded-xl bg-emerald-50/60 border border-emerald-100 p-3.5">
+                <span className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100">
+                  <ShieldAlert className="w-5 h-5 text-emerald-700" />
+                </span>
+                <p className="font-display font-semibold text-text-primary">Priority Support</p>
+              </div>
+            </div>
+
+            <div className="px-6 pt-2 pb-6">
+              <button
+                type="button"
+                onClick={() => setShowXpressWelcome(false)}
+                aria-label="Okay"
+                className="relative overflow-hidden w-full inline-flex items-center justify-center rounded-xl bg-primary text-white py-3.5 font-semibold shadow-sm hover:bg-primary-dark transition-colors"
+              >
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shine"
+                />
+                <span className="relative">Okay</span>
               </button>
             </div>
           </div>
@@ -644,8 +720,14 @@ export function PaymentPage() {
                       </span>
                     </div>
                   )
+                  const ONLINE_INITIAL_VISIBLE = 2
+                  const visibleOnline = showOnlineChallans
+                    ? onlineList
+                    : onlineList.slice(0, ONLINE_INITIAL_VISIBLE)
+                  const hiddenOnlineCount = onlineList.length - ONLINE_INITIAL_VISIBLE
+                  const onlineTotal = displaySummary.onlineAmount + displaySummary.onlineFee
                   const onlineSection = onlineList.length > 0 && (
-                    <section key="online">
+                    <section key="online" className="bg-gray-50/70 rounded-2xl border border-border/40 p-4 sm:p-5">
                       {renderSectionHeader(
                         t.payment.onlineChallans,
                         onlineList.length,
@@ -653,58 +735,140 @@ export function PaymentPage() {
                         'text-cyan-700/70',
                       )}
                       <ul className="space-y-2">
-                        {onlineList.map((c, idx) => renderRow(c, idx))}
+                        {visibleOnline.map((c, idx) => renderRow(c, idx))}
                       </ul>
+                      {hiddenOnlineCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowOnlineChallans((v) => !v)}
+                          className="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-cyan-700 hover:bg-gray-50 transition-colors"
+                        >
+                          {showOnlineChallans
+                            ? 'Show less'
+                            : `Show ${hiddenOnlineCount} more ${hiddenOnlineCount === 1 ? 'challan' : 'challans'}`}
+                          <ChevronDown
+                            className={cn('w-4 h-4 transition-transform', showOnlineChallans && 'rotate-180')}
+                            aria-hidden
+                          />
+                        </button>
+                      )}
+                      <div className="mt-3.5 pt-3 border-t border-border/60 flex items-baseline justify-between">
+                        <span className="font-display text-sm font-semibold text-text-primary">
+                          Total Payable Online Challans
+                        </span>
+                        <span className="font-display text-base font-bold text-text-primary tabular-nums">
+                          ₹{formatINR(onlineTotal)}
+                        </span>
+                      </div>
                     </section>
                   )
                   const expressEligibleCount = courtList.filter((c) => c.expressEligible !== false).length
+                  const expressEligibleIds = courtList
+                    .filter((c) => c.expressEligible !== false)
+                    .map((c) => c.id)
+                  const allExpressOn =
+                    expressEligibleIds.length > 0 &&
+                    expressEligibleIds.every((id) => !regularIds.has(id))
+                  const toggleAllExpress = () =>
+                    setRegularIds((prev) => {
+                      const next = new Set(prev)
+                      if (allExpressOn) {
+                        expressEligibleIds.forEach((id) => next.add(id))
+                      } else {
+                        expressEligibleIds.forEach((id) => next.delete(id))
+                      }
+                      return next
+                    })
                   const courtSection = courtList.length > 0 && (
-                    <section key="court">
-                      {renderSectionHeader(
-                        t.payment.courtChallans,
-                        courtList.length,
-                        'text-rose-800',
-                        'text-rose-800/70',
-                      )}
-                      {expressEligibleCount > 0 && (() => {
-                        const expressEligibleIds = courtList
-                          .filter((c) => c.expressEligible !== false)
-                          .map((c) => c.id)
-                        const allExpressOn = expressEligibleIds.every((id) => !regularIds.has(id))
-                        const toggleAllExpress = () =>
-                          setRegularIds((prev) => {
-                            const next = new Set(prev)
-                            if (allExpressOn) {
-                              expressEligibleIds.forEach((id) => next.add(id))
-                            } else {
-                              expressEligibleIds.forEach((id) => next.delete(id))
-                            }
-                            return next
-                          })
-                        return (
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 mb-3">
-                            <p className="text-sm sm:text-base text-text-primary inline-flex flex-wrap items-center gap-2">
-                              <span>
-                                {`${expressEligibleCount} ${expressEligibleCount === 1 ? 'challan is' : 'challans are'} eligible for XPress delivery`}
-                              </span>
-                              <span className="inline-flex items-center text-xs sm:text-sm font-semibold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
-                                10-days resolution
-                              </span>
-                            </p>
-                            <button
-                              type="button"
-                              onClick={toggleAllExpress}
-                              aria-label={allExpressOn ? 'Switch all to Regular' : 'Switch all to XPress'}
-                              className="text-xs sm:text-sm font-semibold text-cyan-700 hover:text-cyan-800 underline underline-offset-2 transition-colors whitespace-nowrap self-end sm:self-auto sm:flex-shrink-0"
-                            >
+                    <section key="court" className="bg-gray-50/70 rounded-2xl border border-border/40 p-4 sm:p-5">
+                      <div className="flex items-baseline justify-between gap-3 mb-2.5">
+                        <div className="flex items-baseline gap-2.5">
+                          <h4 className="font-display font-bold text-base sm:text-lg text-rose-800">
+                            {t.payment.courtChallans}
+                          </h4>
+                          <span className="font-display font-bold text-base sm:text-lg tabular-nums text-rose-800/70">
+                            {courtList.length}
+                          </span>
+                        </div>
+                        {expressEligibleCount > 0 && (
+                          <button
+                            type="button"
+                            onClick={toggleAllExpress}
+                            role="switch"
+                            aria-checked={allExpressOn}
+                            aria-label={allExpressOn ? 'Switch all to Regular' : 'Switch all to XPress'}
+                            className={cn(
+                              'relative overflow-hidden inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs sm:text-sm font-semibold shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 transition-colors whitespace-nowrap',
+                              allExpressOn
+                                ? 'bg-gradient-to-r from-white via-gray-50 to-white text-cyan-700 hover:from-gray-50 hover:to-gray-50'
+                                : 'bg-gradient-to-r from-amber-100 via-amber-50 to-white text-amber-700 hover:from-amber-200 hover:via-amber-100 hover:to-amber-50',
+                            )}
+                          >
+                            <span
+                              aria-hidden
+                              className={cn(
+                                'pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r animate-shine',
+                                allExpressOn
+                                  ? 'from-transparent via-cyan-500/20 to-transparent'
+                                  : 'from-transparent via-white/70 to-transparent',
+                              )}
+                            />
+                            <span className="relative">
                               {allExpressOn ? 'Switch all to Regular' : 'Switch all to XPress'}
-                            </button>
-                          </div>
-                        )
-                      })()}
+                            </span>
+                            <span
+                              aria-hidden
+                              className={cn(
+                                'relative flex-shrink-0 h-5 w-9 rounded-full transition-colors duration-200',
+                                allExpressOn ? 'bg-emerald-500' : 'bg-gray-300',
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-200',
+                                  allExpressOn ? 'translate-x-4' : 'translate-x-0',
+                                )}
+                              />
+                            </span>
+                          </button>
+                        )}
+                      </div>
                       <ul className="space-y-2">
                         {courtList.map((c, idx) => renderRow(c, idx))}
                       </ul>
+                      {(() => {
+                        const courtGross =
+                          displaySummary.courtAmount + displaySummary.regularFee + displaySummary.expressFee
+                        const courtNet = Math.max(0, courtGross - (pledgeActive ? PLEDGE_REWARD : 0))
+                        return (
+                          <>
+                            {pledgeActive && (
+                              <div className="mt-3.5 flex items-baseline justify-between rounded-lg bg-emerald-50 px-3 py-2">
+                                <span className="font-display text-sm font-semibold text-emerald-700 inline-flex items-center gap-1.5">
+                                  <Gift className="w-4 h-4" aria-hidden />
+                                  Pledge reward applied
+                                </span>
+                                <span className="font-display text-sm font-semibold text-emerald-700 tabular-nums">
+                                  -₹{formatINR(PLEDGE_REWARD)}
+                                </span>
+                              </div>
+                            )}
+                            <div
+                              className={cn(
+                                'pt-3 border-t border-border/60 flex items-baseline justify-between',
+                                pledgeActive ? 'mt-3' : 'mt-3.5',
+                              )}
+                            >
+                              <span className="font-display text-sm font-semibold text-text-primary">
+                                Total Payable Court Challans
+                              </span>
+                              <span className="font-display text-base font-bold text-text-primary tabular-nums">
+                                ₹{formatINR(courtNet)}
+                              </span>
+                            </div>
+                          </>
+                        )
+                      })()}
                     </section>
                   )
                   return (
@@ -752,7 +916,7 @@ export function PaymentPage() {
               </h3>
 
               <div className="rounded-xl border border-border p-4 space-y-3.5">
-                <h4 className="font-display font-semibold text-sm text-text-primary">Regular Challans</h4>
+                <h4 className="font-display font-semibold text-sm text-text-primary">Regular</h4>
                 <RegularSummary
                   summary={displaySummary}
                   t={t}
@@ -761,8 +925,8 @@ export function PaymentPage() {
                 />
                 {pledgeActive && (
                   <div className="flex justify-between text-sm bg-emerald-50 -mx-4 px-4 py-2.5 rounded-lg">
-                    <span className="font-display font-semibold text-success">{t.payment.pledgeReward}</span>
-                    <span className="font-display font-semibold text-success">-₹{formatINR(PLEDGE_REWARD)}</span>
+                    <span className="font-display font-semibold text-emerald-700">{t.payment.pledgeReward}</span>
+                    <span className="font-display font-semibold text-emerald-700">-₹{formatINR(PLEDGE_REWARD)}</span>
                   </div>
                 )}
                 {regularBlockTotal(displaySummary) > 0 && (
@@ -781,7 +945,7 @@ export function PaymentPage() {
               {displaySummary.expressCount > 0 && (
                 <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/40 p-4 space-y-3.5">
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-display font-semibold text-sm text-amber-900">XPress Challans</h4>
+                    <h4 className="font-display font-semibold text-sm text-amber-900">XPress</h4>
                     <ResolutionBadge />
                   </div>
                   <ExpressSummary summary={displaySummary} />
@@ -875,7 +1039,7 @@ export function PaymentPage() {
             <hr className="border-border" />
 
             <div className="rounded-xl border border-border p-4 space-y-3.5">
-              <h4 className="font-display font-semibold text-sm text-text-primary">Regular Challans</h4>
+              <h4 className="font-display font-semibold text-sm text-text-primary">Regular</h4>
               <RegularSummary
                 summary={displaySummary}
                 t={t}
@@ -884,8 +1048,8 @@ export function PaymentPage() {
               />
               {pledgeActive && (
                 <div className="flex justify-between text-sm bg-emerald-50 -mx-4 px-4 py-2.5 rounded-lg">
-                  <span className="font-display font-semibold text-success">{t.payment.pledgeReward}</span>
-                  <span className="font-display font-semibold text-success">-₹{formatINR(PLEDGE_REWARD)}</span>
+                  <span className="font-display font-semibold text-emerald-700">{t.payment.pledgeReward}</span>
+                  <span className="font-display font-semibold text-emerald-700">-₹{formatINR(PLEDGE_REWARD)}</span>
                 </div>
               )}
               {regularBlockTotal(displaySummary) > 0 && (
@@ -904,7 +1068,7 @@ export function PaymentPage() {
             {displaySummary.expressCount > 0 && (
               <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 space-y-3.5">
                 <div className="flex items-center justify-between gap-2">
-                  <h4 className="font-display font-semibold text-sm text-amber-900">XPress Challans</h4>
+                  <h4 className="font-display font-semibold text-sm text-amber-900">XPress</h4>
                   <ResolutionBadge />
                 </div>
                 <ExpressSummary summary={displaySummary} />
@@ -953,7 +1117,7 @@ function RegularSummary({ summary, t, onOnlineFeeInfo, onCourtFeeInfo }: Summary
         <div className="space-y-0.5">
           <div className="flex justify-between text-[13px]">
             <span className="font-display font-semibold text-text-primary">
-              {`${t.payment.onlineChallan} (${summary.onlineCount})`}
+              {`Online Challans (${summary.onlineCount})`}
             </span>
             <span className="font-display font-semibold text-text-primary">
               ₹{formatINR(summary.onlineAmount)}
@@ -983,7 +1147,7 @@ function RegularSummary({ summary, t, onOnlineFeeInfo, onCourtFeeInfo }: Summary
         <div className="space-y-0.5">
           <div className="flex justify-between text-[13px]">
             <span className="font-display font-semibold text-text-primary">
-              {`${t.payment.courtChallan} (${summary.regularCourtCount})`}
+              {`Court Challans (${summary.regularCourtCount})`}
             </span>
             <span className="font-display font-semibold text-text-primary">
               ₹{formatINR(summary.regularCourtAmount)}
@@ -1023,7 +1187,7 @@ function ExpressSummary({ summary }: { summary: SummaryBreakdownProps['summary']
     <div className="space-y-0.5">
       <div className="flex justify-between text-[13px]">
         <span className="font-display font-semibold text-amber-800">
-          {`XPress Challan (${summary.expressCount})`}
+          {`XPress Challans (${summary.expressCount})`}
         </span>
         <span className="font-display font-semibold text-amber-800">
           ₹{formatINR(summary.expressCourtAmount)}
