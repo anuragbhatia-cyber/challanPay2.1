@@ -31,8 +31,15 @@ export function PaymentPage() {
   const markSubmitted = useChallanStore((s) => s.markSubmitted)
   const { state: pageState } = usePageState()
 
-  // Challans opted OUT of Express (10d) — default: all in Express
-  const [regularIds, setRegularIds] = useState<Set<string>>(new Set())
+  // Challans opted OUT of Express (10d) — default: all eligible court challans start in Regular
+  const [regularIds, setRegularIds] = useState<Set<string>>(() => {
+    const idSet = new Set(selectedChallanIds)
+    return new Set(
+      challans
+        .filter((c) => idSet.has(c.id) && c.type === 'court' && c.expressEligible !== false)
+        .map((c) => c.id),
+    )
+  })
   const toggleRowExpress = (id: string) =>
     setRegularIds((prev) => {
       const next = new Set(prev)
@@ -807,10 +814,10 @@ export function PaymentPage() {
                             <span
                               aria-hidden
                               className={cn(
-                                'pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r animate-shine',
+                                'pointer-events-none absolute inset-y-0 left-0 w-2/3 bg-gradient-to-r animate-shine',
                                 allExpressOn
-                                  ? 'from-transparent via-cyan-500/20 to-transparent'
-                                  : 'from-transparent via-white/70 to-transparent',
+                                  ? 'from-transparent via-cyan-500/40 to-transparent'
+                                  : 'from-transparent via-white to-transparent',
                               )}
                             />
                             <span className="relative">
