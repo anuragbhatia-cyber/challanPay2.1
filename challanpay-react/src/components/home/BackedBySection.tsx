@@ -20,7 +20,7 @@ export function BackedBySection() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
           {[
-            { src: '/images/backed-meity.png', alt: 'MeitY - Government of India', size: 'max-h-12 md:max-h-14' },
+            { src: '/images/backed-meity.png', alt: 'MeitY Startup Hub', size: 'max-h-10 md:max-h-12' },
             { src: '/images/backed-ia.png', alt: 'India Accelerator', size: 'max-h-14 md:max-h-18' },
             { src: '/images/backed-zerodha.png', alt: 'Zerodha', size: 'max-h-4 md:max-h-5' },
             { src: '/images/backed-finvolve.png', alt: 'Finvolve', size: 'max-h-5 md:max-h-6' },
