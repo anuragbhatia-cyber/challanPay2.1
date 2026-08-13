@@ -142,7 +142,8 @@ export function HeroSection() {
       {/* Mobile: banner carousel + card stacked below */}
       <div className="md:hidden">
         <div
-          className="relative w-full aspect-[1717/700] overflow-hidden"
+          className="relative w-full"
+          style={{ aspectRatio: '1717 / 700' }}
           onTouchStart={() => setIsPaused(true)}
           onTouchEnd={() => setIsPaused(false)}
         >
@@ -155,7 +156,7 @@ export function HeroSection() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5, ease: 'easeInOut' }}
-              className="absolute inset-0 w-full h-full object-contain object-left"
+              className="absolute inset-0 w-full h-full object-cover object-center"
             />
           </AnimatePresence>
 
