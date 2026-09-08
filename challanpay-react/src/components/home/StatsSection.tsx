@@ -50,7 +50,7 @@ export function StatsSection() {
     <section className="py-16 md:py-20 bg-white">
       <div className="max-w-[1280px] mx-auto px-4 sm:px-6">
         {/* Mobile: stats on top, video below | Desktop: stats left, video right */}
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 lg:items-center">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-14 lg:items-center">
           {/* Stats grid */}
           <div className="lg:flex-1 lg:min-w-0">
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-4">
