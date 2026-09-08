@@ -13,12 +13,7 @@ const slides = [
   {
     image: '/images/hero-slide-1.png',
     mobileImage: '/images/hero-slide-1-mobile.png',
-    alt: 'ChallanPay, Anytime Anywhere — #Be Road Smart',
-  },
-  {
-    image: '/images/hero-slide-2.png',
-    mobileImage: '/images/hero-slide-2-mobile.png',
-    alt: 'ChallanPay XPress — The Fastest Way To Clear Your Traffic Challan',
+    alt: 'ChallanPay — Challan ko samjho. Aaram Se.',
   },
 ]
 
