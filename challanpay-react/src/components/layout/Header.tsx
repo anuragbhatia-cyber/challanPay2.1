@@ -16,14 +16,14 @@ export function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isLangOpen, setIsLangOpen] = useState(false)
   const { language, setLanguage } = useLanguageStore()
-  const { userName, logout } = useUserStore()
+  const { userName, logout, openVerificationModal, setVehicleNumber } = useUserStore()
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
 
   const isRSPPage = location.pathname === '/road-smart-partners'
 
-  const ALL_NAV_LINKS = [
+  const ALL_NAV_LINKS: Array<{ label: string; href: string; badge?: string }> = [
     { label: t.header.roadSmartPartners, href: '/road-smart-partners', badge: t.header.new },
     { label: t.header.howItWorks, href: '/#how-it-works' },
     { label: t.header.support, href: '/#support' },
@@ -58,13 +58,19 @@ export function Header() {
   return (
     <>
     <header className="sticky top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm shadow-[0_2px_2px_rgba(0,0,0,0.08)]">
-      <nav className="max-w-[1280px] mx-auto px-6 sm:px-8 lg:px-10 flex items-center justify-between h-20">
+      <nav className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 flex items-center justify-between h-20">
         {/* Logo */}
-        <Link to={isRSPPage ? '/road-smart-partners' : '/'} className="flex-shrink-0">
+        <Link to={isRSPPage ? '/road-smart-partners' : '/'} className="flex-shrink-0 flex items-center gap-4 md:gap-6">
           <img
             src={isRSPPage ? '/images/rsp-logo.webp' : '/images/logo.png'}
             alt={isRSPPage ? 'Road Smart Partner Logo' : 'ChallanPay Logo'}
-            className="h-8 md:h-10 w-auto"
+            className="h-7 md:h-8 w-auto"
+          />
+          <span className="h-6 md:h-7 w-px bg-gray-300" aria-hidden="true" />
+          <img
+            src="/images/across-assist-logo.png"
+            alt="Across Assist Logo"
+            className="h-6 md:h-7 w-auto"
           />
         </Link>
 
@@ -165,7 +171,16 @@ export function Header() {
           {!isRSPPage && (
           <div className="relative">
           <button
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            onClick={() => {
+              if (!userName) {
+                setIsProfileOpen(false)
+                setIsLangOpen(false)
+                setVehicleNumber(null)
+                openVerificationModal()
+              } else {
+                setIsProfileOpen(!isProfileOpen)
+              }
+            }}
             className="flex items-center gap-3 pl-2 pr-4 py-2 min-h-11 rounded-full border border-gray-200 bg-gradient-to-br from-gray-50 to-white hover:from-gray-100 hover:to-gray-50 hover:shadow-sm transition-all"
           >
             <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
@@ -174,11 +189,13 @@ export function Header() {
             <span className="text-[15px] font-semibold text-gray-900 max-w-[150px] truncate">
               {userName || t.header.login}
             </span>
-            <ChevronDown className={cn('w-4 h-4 text-gray-500 transition-transform', isProfileOpen && 'rotate-180')} />
+            {userName && (
+              <ChevronDown className={cn('w-4 h-4 text-gray-500 transition-transform', isProfileOpen && 'rotate-180')} />
+            )}
           </button>
 
-          {/* Dropdown */}
-          {isProfileOpen && (
+          {/* Dropdown — only for logged-in users */}
+          {isProfileOpen && userName && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-border py-2 animate-slide-down">
               <Link
                 to="/track-status"
@@ -188,26 +205,22 @@ export function Header() {
                 <Calendar className="w-4 h-4" />
                 {t.header.trackMyChallans}
               </Link>
-              {userName && (
-                <>
-                  <Link
-                    to="/profile"
-                    className="flex items-center gap-3 px-4 py-3 min-h-11 text-sm text-text-secondary hover:bg-gray-50 transition-colors"
-                    onClick={() => setIsProfileOpen(false)}
-                  >
-                    <User className="w-4 h-4" />
-                    {t.header.myProfile}
-                  </Link>
-                  <hr className="my-1 border-border" />
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-3 px-4 py-3 min-h-11 text-sm text-text-secondary hover:bg-gray-50 transition-colors w-full text-left"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    {t.header.logout}
-                  </button>
-                </>
-              )}
+              <Link
+                to="/profile"
+                className="flex items-center gap-3 px-4 py-3 min-h-11 text-sm text-text-secondary hover:bg-gray-50 transition-colors"
+                onClick={() => setIsProfileOpen(false)}
+              >
+                <User className="w-4 h-4" />
+                {t.header.myProfile}
+              </Link>
+              <hr className="my-1 border-border" />
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-4 py-3 min-h-11 text-sm text-text-secondary hover:bg-gray-50 transition-colors w-full text-left"
+              >
+                <LogOut className="w-4 h-4" />
+                {t.header.logout}
+              </button>
             </div>
           )}
           </div>
@@ -242,13 +255,19 @@ export function Header() {
         <div className="flex items-center justify-between h-20 px-6">
           <Link
             to={isRSPPage ? '/road-smart-partners' : '/'}
-            className="flex-shrink-0"
+            className="flex-shrink-0 flex items-center gap-4"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <img
               src={isRSPPage ? '/images/rsp-logo.webp' : '/images/logo.png'}
               alt={isRSPPage ? 'Road Smart Partner Logo' : 'ChallanPay Logo'}
-              className="h-8 w-auto"
+              className="h-7 w-auto"
+            />
+            <span className="h-6 w-px bg-gray-300" aria-hidden="true" />
+            <img
+              src="/images/across-assist-logo.png"
+              alt="Across Assist Logo"
+              className="h-6 w-auto"
             />
           </Link>
           <button
@@ -346,14 +365,17 @@ export function Header() {
               </button>
             </>
           ) : (
-            <Link
-              to="/track-status"
-              className="flex items-center gap-3 px-4 py-3.5 min-h-11 text-lg font-medium text-text-primary hover:bg-gray-50 rounded-lg transition-colors"
-              onClick={() => setIsMobileMenuOpen(false)}
+            <button
+              onClick={() => {
+                setIsMobileMenuOpen(false)
+                setVehicleNumber(null)
+                openVerificationModal()
+              }}
+              className="flex items-center gap-3 px-4 py-3.5 min-h-11 text-lg font-medium text-text-primary hover:bg-gray-50 rounded-lg transition-colors w-full text-left"
             >
               <User className="w-5 h-5" />
               {t.header.login}
-            </Link>
+            </button>
           )}
         </div>
       </nav>
