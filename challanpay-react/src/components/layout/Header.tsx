@@ -64,7 +64,7 @@ export function Header() {
           <img
             src={isRSPPage ? '/images/rsp-logo.webp' : '/images/challanpay-logo.png'}
             alt={isRSPPage ? 'Road Smart Partner Logo' : 'ChallanPay Logo'}
-            className="h-7 md:h-8 w-auto"
+            className="h-12 md:h-14 w-auto"
           />
         </Link>
 
@@ -255,7 +255,7 @@ export function Header() {
             <img
               src={isRSPPage ? '/images/rsp-logo.webp' : '/images/challanpay-logo.png'}
               alt={isRSPPage ? 'Road Smart Partner Logo' : 'ChallanPay Logo'}
-              className="h-7 w-auto"
+              className="h-12 w-auto"
             />
           </Link>
           <button
