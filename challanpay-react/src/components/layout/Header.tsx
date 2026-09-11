@@ -60,17 +60,11 @@ export function Header() {
     <header className="sticky top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm shadow-[0_2px_2px_rgba(0,0,0,0.08)]">
       <nav className="max-w-[1440px] mx-auto px-6 sm:px-10 lg:px-14 flex items-center justify-between h-20">
         {/* Logo */}
-        <Link to={isRSPPage ? '/road-smart-partners' : '/'} className="flex-shrink-0 flex items-center gap-4 md:gap-6">
+        <Link to={isRSPPage ? '/road-smart-partners' : '/'} className="flex-shrink-0 flex items-center">
           <img
-            src={isRSPPage ? '/images/rsp-logo.webp' : '/images/logo.png'}
+            src={isRSPPage ? '/images/rsp-logo.webp' : '/images/challanpay-logo.png'}
             alt={isRSPPage ? 'Road Smart Partner Logo' : 'ChallanPay Logo'}
             className="h-7 md:h-8 w-auto"
-          />
-          <span className="h-6 md:h-7 w-px bg-gray-300" aria-hidden="true" />
-          <img
-            src="/images/across-assist-logo.png"
-            alt="Across Assist Logo"
-            className="h-6 md:h-7 w-auto"
           />
         </Link>
 
@@ -255,19 +249,13 @@ export function Header() {
         <div className="flex items-center justify-between h-20 px-6">
           <Link
             to={isRSPPage ? '/road-smart-partners' : '/'}
-            className="flex-shrink-0 flex items-center gap-4"
+            className="flex-shrink-0 flex items-center"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             <img
-              src={isRSPPage ? '/images/rsp-logo.webp' : '/images/logo.png'}
+              src={isRSPPage ? '/images/rsp-logo.webp' : '/images/challanpay-logo.png'}
               alt={isRSPPage ? 'Road Smart Partner Logo' : 'ChallanPay Logo'}
               className="h-7 w-auto"
-            />
-            <span className="h-6 w-px bg-gray-300" aria-hidden="true" />
-            <img
-              src="/images/across-assist-logo.png"
-              alt="Across Assist Logo"
-              className="h-6 w-auto"
             />
           </Link>
           <button
