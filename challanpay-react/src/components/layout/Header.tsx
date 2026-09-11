@@ -221,6 +221,24 @@ export function Header() {
           )}
         </div>
 
+        {/* Mobile-only RSP quick link (hidden on RSP page itself) */}
+        {!isRSPPage && (
+          <Link
+            to="/road-smart-partners"
+            className="md:hidden ml-auto mr-1 flex items-center gap-1.5"
+            aria-label={t.header.roadSmartPartners}
+          >
+            <img
+              src="/images/rsp-logo.webp"
+              alt={t.header.roadSmartPartners}
+              className="h-7 w-auto"
+            />
+            <span className="text-[10px] font-bold bg-gradient-to-br from-emerald-500 to-emerald-600 text-white px-1.5 py-0.5 rounded leading-none">
+              {t.header.new}
+            </span>
+          </Link>
+        )}
+
         {/* Hamburger Button */}
         <button
           className="md:hidden p-3 min-w-11 min-h-11 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center"
