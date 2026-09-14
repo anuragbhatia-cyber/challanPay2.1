@@ -1,4 +1,5 @@
 import { useState, useRef, useMemo } from 'react'
+import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight,
@@ -339,6 +340,7 @@ function SidebarTabButton({
 // --- Dashboard Section ---
 function DashboardSection() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { userName, userMobile } = useUserStore()
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>('challan')
   const [filterTab, setFilterTab] = useState<FilterTab>('all')
@@ -566,8 +568,16 @@ function DashboardSection() {
                         ))}
                       </div>
                     ) : (
-                      <div className="bg-white rounded-xl border border-border p-8 text-center">
+                      <div className="bg-white rounded-xl border border-border p-8 flex flex-col items-center text-center">
+                        <FileText className="w-10 h-10 text-gray-300 mb-3" />
                         <p className="text-sm text-text-secondary">{t.trackStatus.noChallansFound}</p>
+                        <button
+                          onClick={() => navigate('/')}
+                          className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold hover:bg-primary/90 transition-colors"
+                        >
+                          Check Challans
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
                       </div>
                     )}
                   </div>
