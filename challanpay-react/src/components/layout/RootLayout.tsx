@@ -6,6 +6,7 @@ import { Header } from './Header'
 import { Footer } from './Footer'
 import { SkipToContent } from '@/components/shared/SkipToContent'
 import { OfflineBanner } from '@/components/shared/OfflineBanner'
+import { VerificationModal } from '@/components/home/VerificationModal'
 
 const BOTTOM_NAV_ITEMS = [
   { label: 'Check Challans', icon: Search, path: '/' },
@@ -58,6 +59,7 @@ export function RootLayout() {
         <Outlet />
       </main>
       <Footer />
+      <VerificationModal />
 
       {/* Mobile Bottom Navbar */}
       {showBottomNav && (

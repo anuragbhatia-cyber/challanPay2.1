@@ -7,7 +7,7 @@ interface UserState {
   vehicleNumber: string | null
   isVerificationModalOpen: boolean
   setUser: (name: string, mobile: string) => void
-  setVehicleNumber: (vn: string) => void
+  setVehicleNumber: (vn: string | null) => void
   openVerificationModal: () => void
   closeVerificationModal: () => void
   logout: () => void

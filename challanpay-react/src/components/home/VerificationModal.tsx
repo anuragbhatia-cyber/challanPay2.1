@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router'
 import { useUserStore } from '@/stores/userStore'
 import { mobileSchema, otpSchema, userNameSchema } from '@/lib/validators'
 import { useModalA11y } from '@/hooks/useModalA11y'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 type Step = 'details' | 'otp'
 
@@ -90,12 +91,14 @@ export function VerificationModal() {
   const handleDetailsSubmit = () => {
     let hasError = false
 
-    const nameResult = userNameSchema.safeParse(name)
-    if (!nameResult.success) {
-      setNameError(nameResult.error.errors[0].message)
-      hasError = true
-    } else {
-      setNameError('')
+    if (vehicleNumber) {
+      const nameResult = userNameSchema.safeParse(name)
+      if (!nameResult.success) {
+        setNameError(nameResult.error.errors[0].message)
+        hasError = true
+      } else {
+        setNameError('')
+      }
     }
 
     const mobileResult = mobileSchema.safeParse(mobile)
@@ -119,9 +122,11 @@ export function VerificationModal() {
       return
     }
     setError('')
-    setUser(name, mobile)
+    setUser(name || 'User', mobile)
     closeVerificationModal()
-    navigate(`/loading?vehicle=${encodeURIComponent(vehicleNumber ?? '')}`)
+    if (vehicleNumber) {
+      navigate(`/loading?vehicle=${encodeURIComponent(vehicleNumber)}`)
+    }
   }
 
   const handleOtpSubmit = () => {
@@ -137,6 +142,7 @@ export function VerificationModal() {
   }
 
   const stepIndex = step === 'details' ? 0 : 1
+  const isDesktop = useMediaQuery('(min-width: 768px)')
 
   return (
     <AnimatePresence>
@@ -149,10 +155,10 @@ export function VerificationModal() {
           onClick={closeVerificationModal}
         >
           <motion.div
-            initial={{ y: '100%', opacity: 1 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 1 }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            initial={isDesktop ? { opacity: 0, scale: 0.96 } : { y: '100%', opacity: 1 }}
+            animate={isDesktop ? { opacity: 1, scale: 1 } : { y: 0, opacity: 1 }}
+            exit={isDesktop ? { opacity: 0, scale: 0.96 } : { y: '100%', opacity: 1 }}
+            transition={isDesktop ? { duration: 0.18, ease: 'easeOut' } : { type: 'spring', damping: 30, stiffness: 300 }}
             className="relative w-full md:max-w-lg bg-white rounded-t-2xl md:rounded-2xl shadow-xl overflow-hidden max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -171,17 +177,19 @@ export function VerificationModal() {
             </button>
 
             <div className="p-6 pb-8 md:p-10">
-              {/* Progress */}
-              <div className="flex items-center gap-2 mb-8 pr-12">
-                {[0, 1].map((i) => (
-                  <div
-                    key={i}
-                    className={`h-1.5 flex-1 rounded-full transition-colors ${
-                      i <= stepIndex ? 'bg-primary' : 'bg-gray-200'
-                    }`}
-                  />
-                ))}
-              </div>
+              {/* Progress — hidden in login mode (no vehicle number) */}
+              {vehicleNumber && (
+                <div className="flex items-center gap-2 mb-8 pr-12">
+                  {[0, 1].map((i) => (
+                    <div
+                      key={i}
+                      className={`h-1.5 flex-1 rounded-full transition-colors ${
+                        i <= stepIndex ? 'bg-primary' : 'bg-gray-200'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
 
               {/* Vehicle badge */}
               {vehicleNumber && (
@@ -201,36 +209,38 @@ export function VerificationModal() {
                     transition={{ duration: 0.2 }}
                   >
                     <h3 className="font-display text-2xl font-bold text-text-primary mb-2">
-                      Enter your details
+                      {vehicleNumber ? 'Enter your details' : 'Login'}
                     </h3>
                     <p className="font-body text-sm text-text-secondary mb-7">
                       We'll send you an OTP to verify your number
                     </p>
 
-                    {/* Name input */}
-                    <div className="mb-5">
-                      <label htmlFor="vm-name" className="block text-xs font-medium text-text-secondary mb-2 font-body">
-                        Full Name
-                      </label>
-                      <input
-                        id="vm-name"
-                        type="text"
-                        value={name}
-                        onChange={(e) => {
-                          setName(e.target.value)
-                          setNameError('')
-                        }}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Enter your full name"
-                        autoFocus
-                        aria-invalid={nameError ? true : undefined}
-                        aria-describedby={nameError ? 'vm-name-error' : undefined}
-                        className="w-full px-4 py-4 rounded-xl border border-border bg-gray-50 text-sm font-body text-text-primary placeholder:text-gray-500 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
-                      />
-                      {nameError && (
-                        <p id="vm-name-error" role="alert" className="text-xs text-red-500 mt-1.5 font-body">{nameError}</p>
-                      )}
-                    </div>
+                    {/* Name input — only in registration mode (vehicle number set) */}
+                    {vehicleNumber && (
+                      <div className="mb-5">
+                        <label htmlFor="vm-name" className="block text-xs font-medium text-text-secondary mb-2 font-body">
+                          Full Name
+                        </label>
+                        <input
+                          id="vm-name"
+                          type="text"
+                          value={name}
+                          onChange={(e) => {
+                            setName(e.target.value)
+                            setNameError('')
+                          }}
+                          onKeyDown={handleKeyDown}
+                          placeholder="Enter your full name"
+                          autoFocus
+                          aria-invalid={nameError ? true : undefined}
+                          aria-describedby={nameError ? 'vm-name-error' : undefined}
+                          className="w-full px-4 py-4 rounded-xl border border-border bg-gray-50 text-sm font-body text-text-primary placeholder:text-gray-500 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+                        />
+                        {nameError && (
+                          <p id="vm-name-error" role="alert" className="text-xs text-red-500 mt-1.5 font-body">{nameError}</p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Mobile input */}
                     <div>
@@ -253,6 +263,7 @@ export function VerificationModal() {
                           }}
                           onKeyDown={handleKeyDown}
                           placeholder="10-digit mobile number"
+                          autoFocus={!vehicleNumber}
                           aria-invalid={mobileError ? true : undefined}
                           aria-describedby={mobileError ? 'vm-mobile-error' : undefined}
                           className="w-full pl-12 pr-4 py-4 rounded-xl border border-border bg-gray-50 text-sm font-body text-text-primary placeholder:text-gray-500 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
@@ -273,12 +284,14 @@ export function VerificationModal() {
                       <ArrowRight className="w-4 h-4" />
                     </motion.button>
 
-                    <p className="text-[11px] text-text-light text-center mt-4 leading-relaxed">
-                      By continuing, you agree to our{' '}
-                      <a href="/terms" className="text-primary underline underline-offset-2">Terms &amp; Conditions</a>
-                      {' '}and{' '}
-                      <a href="/privacy-policy" className="text-primary underline underline-offset-2">Privacy Policy</a>
-                    </p>
+                    {vehicleNumber && (
+                      <p className="text-[11px] text-text-light text-center mt-4 leading-relaxed">
+                        By continuing, you agree to our{' '}
+                        <a href="/terms" className="text-primary underline underline-offset-2">Terms &amp; Conditions</a>
+                        {' '}and{' '}
+                        <a href="/privacy-policy" className="text-primary underline underline-offset-2">Privacy Policy</a>
+                      </p>
+                    )}
                   </motion.div>
                 )}
 
@@ -344,14 +357,14 @@ export function VerificationModal() {
                         )}
                       </p>
                     </div>
-                    <div className="flex gap-3 mt-5">
+                    <div className="flex gap-3 mt-8">
                       <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                         onClick={handleOtpSubmit}
                         className="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-display font-semibold py-4 rounded-xl transition-colors text-sm"
                       >
-                        Check Challans
+                        {vehicleNumber ? 'Check Challans' : 'Login'}
                         <ArrowRight className="w-4 h-4" />
                       </motion.button>
                     </div>

@@ -89,6 +89,9 @@ export function StatusPage() {
   const [missingDragOver, setMissingDragOver] = useState(false)
   const [reportedChallans, setReportedChallans] = useState<Challan[]>([])
   const [missingDismissed, setMissingDismissed] = useState(false)
+  const [showChangeVehicleModal, setShowChangeVehicleModal] = useState(false)
+  const [newVehicleInput, setNewVehicleInput] = useState('')
+  const [newVehicleError, setNewVehicleError] = useState('')
 
   const submittedIdSet = useMemo(() => new Set(submittedChallans.map((c) => c.id)), [submittedChallans])
 
@@ -132,6 +135,23 @@ export function StatusPage() {
   useModalA11y(showMissingInfo, () => setShowMissingInfo(false))
   useModalA11y(showSubmittedInfo, () => setShowSubmittedInfo(false))
   useModalA11y(tabInfo !== null, () => setTabInfo(null))
+  useModalA11y(showChangeVehicleModal, () => setShowChangeVehicleModal(false))
+
+  const handleCheckAnotherVehicle = () => {
+    const vn = newVehicleInput.trim().toUpperCase()
+    if (!vn) {
+      setNewVehicleError('Please enter a vehicle number')
+      return
+    }
+    if (vn.length < 4) {
+      setNewVehicleError('Please enter a valid vehicle number')
+      return
+    }
+    setNewVehicleError('')
+    setShowChangeVehicleModal(false)
+    setNewVehicleInput('')
+    navigate(`/loading?vehicle=${encodeURIComponent(vn)}`)
+  }
 
   const filteredChallans = useMemo(() => {
     const base = activeFilter === 'all' ? allChallans : allChallans.filter((c) => c.type === activeFilter)
@@ -261,7 +281,15 @@ export function StatusPage() {
           <div className="flex items-center gap-4">
             <img src="/images/BLACK-CAR.png" alt="Vehicle" className="w-24 h-16 object-contain flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-text-light">Hyundai Creta</p>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-sm text-text-light">Hyundai Creta</p>
+                <button
+                  onClick={() => setShowChangeVehicleModal(true)}
+                  className="text-primary text-xs font-semibold underline underline-offset-4 hover:text-primary-dark transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  Check Another Vehicle
+                </button>
+              </div>
               <p className="font-display font-bold text-text-primary text-lg truncate" title={vehicle}>{vehicle}</p>
             </div>
           </div>
@@ -368,7 +396,15 @@ export function StatusPage() {
                 <img src="/images/BLACK-CAR.png" alt="Vehicle" className="w-28 h-20 object-contain flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm text-text-light">Hyundai Creta</p>
-                  <p className="font-display font-bold text-text-primary text-lg truncate" title={vehicle}>{vehicle}</p>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <p className="font-display font-bold text-text-primary text-lg truncate" title={vehicle}>{vehicle}</p>
+                    <button
+                      onClick={() => setShowChangeVehicleModal(true)}
+                      className="hidden sm:inline-block text-primary text-sm font-semibold underline underline-offset-4 hover:text-primary-dark transition-colors whitespace-nowrap"
+                    >
+                      Check Another Vehicle
+                    </button>
+                  </div>
                 </div>
                 <span className="hidden sm:inline-flex items-center gap-2 pl-2 pr-5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-sm font-semibold whitespace-nowrap flex-shrink-0">
                   <img src="/images/govt-verified-badge.png" alt="" className="w-8 h-8" />
@@ -475,7 +511,7 @@ export function StatusPage() {
                       icon={CircleCheck}
                       title="No pending challans"
                       description="You're all clear for this vehicle. Try changing the filter or check another vehicle."
-                      action={{ label: 'Check another vehicle', onClick: () => navigate('/') }}
+                      action={{ label: 'Check Another Vehicle', onClick: () => navigate('/') }}
                     />
                   </div>
                 ) : (
@@ -509,7 +545,7 @@ export function StatusPage() {
                       {/* Card Header */}
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-xs font-mono text-text-light">#{challan.challanNumber.slice(0, 12)}...</span>
+                          <span className="text-xs font-mono text-text-light">#{challan.challanNumber}</span>
                           <button
                             onClick={() => handleCopyChallan(challan.challanNumber)}
                             aria-label="Copy challan number"
@@ -660,7 +696,7 @@ export function StatusPage() {
                       >
                         {/* Card Header */}
                         <div className="flex items-center justify-between gap-3 mb-3">
-                          <span className="text-xs font-mono text-text-secondary truncate">#{challan.challanNumber.slice(0, 12)}...</span>
+                          <span className="text-xs font-mono text-text-secondary">#{challan.challanNumber}</span>
                           <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-700 whitespace-nowrap">
                             <Clock className="w-3 h-3" />
                             In Progress
@@ -751,7 +787,7 @@ export function StatusPage() {
                       {/* Card Header */}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-mono text-text-light">#{challan.challanNumber.slice(0, 12)}...</span>
+                          <span className="text-xs font-mono text-text-light">#{challan.challanNumber}</span>
                           <button
                             onClick={() => handleCopyChallan(challan.challanNumber)}
                             aria-label="Copy challan number"
@@ -1229,6 +1265,72 @@ export function StatusPage() {
           </div>
         )
       })()}
+
+      {/* Check Another Vehicle Modal */}
+      {showChangeVehicleModal && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
+          onClick={() => setShowChangeVehicleModal(false)}
+        >
+          <div
+            className="relative w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden pb-[env(safe-area-inset-bottom)] sm:pb-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border">
+              <h3 className="font-display text-base font-bold text-text-primary">Check Another Vehicle</h3>
+              <button
+                onClick={() => setShowChangeVehicleModal(false)}
+                aria-label="Close"
+                className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5">
+              <div>
+                <label htmlFor="change-vehicle-number" className="font-display text-base font-medium text-text-primary">
+                  Vehicle Number
+                </label>
+                <div
+                  className={cn(
+                    'mt-1.5 flex items-center bg-[#F7F8FA] border-2 rounded-[14px] overflow-hidden focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(8,145,178,0.1)] transition-all',
+                    newVehicleError ? 'border-red-400' : 'border-[#E5E7EB]'
+                  )}
+                >
+                  <input
+                    id="change-vehicle-number"
+                    type="text"
+                    value={newVehicleInput}
+                    onChange={(e) => { setNewVehicleInput(e.target.value.toUpperCase()); setNewVehicleError('') }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleCheckAnotherVehicle() }}
+                    placeholder="e.g. UP32 GJ 4083"
+                    autoFocus
+                    maxLength={12}
+                    aria-invalid={newVehicleError ? true : undefined}
+                    aria-describedby={newVehicleError ? 'change-vehicle-error' : undefined}
+                    className="flex-1 px-4 py-3.5 text-base font-body font-medium text-text-primary placeholder:text-gray-500 placeholder:normal-case outline-none bg-transparent uppercase tracking-wider"
+                  />
+                </div>
+                {newVehicleError && (
+                  <p id="change-vehicle-error" role="alert" className="text-xs text-red-500 mt-1.5">
+                    {newVehicleError}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCheckAnotherVehicle}
+                className="w-full flex items-center justify-center gap-2 py-4 px-6 bg-primary hover:bg-primary-dark text-white font-display font-semibold rounded-[14px] transition-colors text-base"
+              >
+                Check Challans
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageTransition>
   )
 }
