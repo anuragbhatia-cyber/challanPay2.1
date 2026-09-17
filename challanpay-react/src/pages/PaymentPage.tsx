@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
-import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check, Clock } from 'lucide-react'
+import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check, Clock, TicketPercent, ChevronRight, BadgeCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { Skeleton } from '@/components/shared/Skeleton'
@@ -19,6 +19,51 @@ import {
 } from '@/stores/challanStore'
 
 const formatINR = (n: number) => n.toLocaleString('en-IN')
+
+type Coupon = {
+  id: string
+  code: string
+  title: string
+  description: string
+  discount: number
+  minAmount?: number
+  tag?: string
+}
+
+const COUPONS: Coupon[] = [
+  {
+    id: 'FIRST100',
+    code: 'FIRST100',
+    title: 'Flat ₹100 off',
+    description: 'Welcome bonus on your first payment.',
+    discount: 100,
+    tag: 'New user',
+  },
+  {
+    id: 'SAVE500',
+    code: 'SAVE500',
+    title: '₹500 off',
+    description: 'On payments above ₹5,000.',
+    discount: 500,
+    minAmount: 5000,
+  },
+  {
+    id: 'PAYFAST300',
+    code: 'PAYFAST300',
+    title: 'Flat ₹300 off',
+    description: 'Limited-time offer on all challans.',
+    discount: 300,
+    tag: 'Popular',
+  },
+  {
+    id: 'XPRESS750',
+    code: 'XPRESS750',
+    title: '₹750 off',
+    description: 'On payments above ₹8,000.',
+    discount: 750,
+    minAmount: 8000,
+  },
+]
 
 export function PaymentPage() {
   const { t } = useTranslation()
@@ -98,6 +143,8 @@ export function PaymentPage() {
   const displaySummary = summary
 
   const [pledgeChecked, setPledgeChecked] = useState(false)
+  const [showCouponSheet, setShowCouponSheet] = useState(false)
+  const [appliedCouponId, setAppliedCouponId] = useState<string | null>(null)
   const [showBackConfirm, setShowBackConfirm] = useState(false)
   const [legalChargesInfo, setLegalChargesInfo] = useState<'online' | 'court' | null>(null)
   const [showIneligibleInfo, setShowIneligibleInfo] = useState(false)
@@ -109,7 +156,19 @@ export function PaymentPage() {
   const [showOnlineChallans, setShowOnlineChallans] = useState(false)
 
   const pledgeActive = pledgeChecked && !isPremium && displaySummary.expressCount === 0
-  const payNowTotal = pledgeActive ? Math.max(0, displaySummary.subtotal - PLEDGE_REWARD) : displaySummary.subtotal
+  const subtotalAfterPledge = pledgeActive
+    ? Math.max(0, displaySummary.subtotal - PLEDGE_REWARD)
+    : displaySummary.subtotal
+  const appliedCoupon = useMemo(
+    () => COUPONS.find((c) => c.id === appliedCouponId) ?? null,
+    [appliedCouponId],
+  )
+  const couponEligible = (c: Coupon) => subtotalAfterPledge >= (c.minAmount ?? 0)
+  const couponDiscount =
+    appliedCoupon && couponEligible(appliedCoupon)
+      ? Math.min(appliedCoupon.discount, subtotalAfterPledge)
+      : 0
+  const payNowTotal = Math.max(0, subtotalAfterPledge - couponDiscount)
   const effectiveChallanIds = useMemo(() => effectiveChallans.map((c) => c.id), [effectiveChallans])
   const selectedCount = effectiveChallanIds.length
 
@@ -118,6 +177,7 @@ export function PaymentPage() {
   useModalA11y(showIneligibleInfo, () => setShowIneligibleInfo(false))
   useModalA11y(showExpressIneligibleInfo, () => setShowExpressIneligibleInfo(false))
   useModalA11y(showXpressWelcome, () => setShowXpressWelcome(false))
+  useModalA11y(showCouponSheet, () => setShowCouponSheet(false))
 
   const prefersReducedMotion = useReducedMotion()
 
@@ -175,6 +235,91 @@ export function PaymentPage() {
     </div>
   ) : null
 
+  const featuredCoupon =
+    appliedCoupon && couponEligible(appliedCoupon)
+      ? appliedCoupon
+      : COUPONS.find((c) => couponEligible(c)) ?? COUPONS[0]
+  const featuredEligible = couponEligible(featuredCoupon)
+  const isFeaturedApplied = appliedCouponId === featuredCoupon.id && featuredEligible
+  const otherOffersCount = Math.max(0, COUPONS.length - 1)
+
+  const couponCard = (
+    <div className="bg-white rounded-2xl border border-border/60 overflow-hidden">
+      <div className="p-4 sm:p-5">
+        <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              'flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full',
+              isFeaturedApplied ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-50 text-emerald-700',
+            )}
+          >
+            <TicketPercent className="w-5 h-5" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-display font-bold text-sm text-text-primary">
+                {featuredCoupon.title}
+              </p>
+              {featuredCoupon.tag && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
+                  {featuredCoupon.tag}
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-text-light mt-0.5 truncate">
+              {isFeaturedApplied ? (
+                <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
+                  <BadgeCheck className="w-3.5 h-3.5" aria-hidden />
+                  {featuredCoupon.code} applied · saved ₹{formatINR(couponDiscount)}
+                </span>
+              ) : (
+                <>
+                  <span className="font-mono font-semibold text-text-secondary">
+                    {featuredCoupon.code}
+                  </span>
+                  <span> · {featuredCoupon.description}</span>
+                </>
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={!featuredEligible}
+            onClick={() => {
+              if (isFeaturedApplied) {
+                setAppliedCouponId(null)
+                toast.success('Coupon removed')
+              } else {
+                setAppliedCouponId(featuredCoupon.id)
+                toast.success(`Coupon ${featuredCoupon.code} applied 🎉`)
+              }
+            }}
+            className={cn(
+              'flex-shrink-0 px-3.5 py-2 rounded-lg text-xs font-semibold bg-white border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+              isFeaturedApplied
+                ? 'border-emerald-400 text-emerald-700 hover:bg-emerald-50'
+                : featuredEligible
+                  ? 'border-primary text-primary hover:bg-primary/5'
+                  : 'border-gray-200 text-gray-400 cursor-not-allowed',
+            )}
+          >
+            {isFeaturedApplied ? 'Remove' : 'Apply'}
+          </button>
+        </div>
+      </div>
+      {otherOffersCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowCouponSheet(true)}
+          className="w-full flex items-center justify-between px-4 sm:px-5 py-2.5 border-t border-border/60 text-xs font-semibold text-primary hover:bg-primary/[0.03] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+        >
+          <span>View all {COUPONS.length} offers</span>
+          <ChevronRight className="w-4 h-4" aria-hidden />
+        </button>
+      )}
+    </div>
+  )
+
   const handlePayment = () => {
     const txnId = `TXN${Date.now()}`
     recordTransaction(txnId, payNowTotal, effectiveChallanIds.length)
@@ -193,6 +338,133 @@ export function PaymentPage() {
 
   return (
     <PageTransition>
+      {/* Coupon Bottom Sheet */}
+      {showCouponSheet && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
+          onClick={() => setShowCouponSheet(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Apply Coupon"
+        >
+          <div
+            className="relative w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden animate-slide-down max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Grab handle (mobile) */}
+            <div className="sm:hidden pt-2 pb-1 flex justify-center">
+              <span className="block w-10 h-1 rounded-full bg-gray-300" aria-hidden />
+            </div>
+
+            <div className="flex items-center justify-between px-5 pt-3 pb-3 sm:pt-6 border-b border-border/60">
+              <div>
+                <h3 className="font-display text-lg font-bold text-text-primary">
+                  Apply Coupon
+                </h3>
+                <p className="text-xs text-text-light mt-0.5">
+                  Choose an offer to save on your payment.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowCouponSheet(false)}
+                className="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+              {COUPONS.map((c) => {
+                const eligible = couponEligible(c)
+                const isApplied = appliedCouponId === c.id
+                return (
+                  <div
+                    key={c.id}
+                    className={cn(
+                      'rounded-xl border p-4 transition-colors',
+                      isApplied
+                        ? 'border-emerald-400 bg-emerald-50/60'
+                        : eligible
+                          ? 'border-border/70 bg-white'
+                          : 'border-border/60 bg-gray-50 opacity-70',
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span
+                        className={cn(
+                          'flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full',
+                          isApplied ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-50 text-emerald-700',
+                        )}
+                      >
+                        <TicketPercent className="w-5 h-5" aria-hidden />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-display font-bold text-sm text-text-primary">
+                            {c.title}
+                          </p>
+                          {c.tag && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
+                              {c.tag}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-text-light mt-0.5">{c.description}</p>
+                        <div className="mt-2 flex items-center gap-2 flex-wrap">
+                          <span className="inline-block font-mono text-[11px] font-semibold text-text-primary tracking-wider px-2 py-1 rounded border border-dashed border-border bg-white">
+                            {c.code}
+                          </span>
+                          {!eligible && (
+                            <span className="text-[11px] font-medium text-rose-700">
+                              Min ₹{formatINR(c.minAmount ?? 0)} required
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={!eligible}
+                        onClick={() => {
+                          if (isApplied) {
+                            setAppliedCouponId(null)
+                            toast.success('Coupon removed')
+                          } else {
+                            setAppliedCouponId(c.id)
+                            toast.success(`Coupon ${c.code} applied 🎉`)
+                            setShowCouponSheet(false)
+                          }
+                        }}
+                        className={cn(
+                          'flex-shrink-0 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors',
+                          isApplied
+                            ? 'bg-white border border-emerald-400 text-emerald-700 hover:bg-emerald-50'
+                            : eligible
+                              ? 'bg-primary text-white hover:bg-primary-dark'
+                              : 'bg-gray-200 text-gray-400 cursor-not-allowed',
+                        )}
+                      >
+                        {isApplied ? 'Remove' : 'Apply'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="px-5 py-3 border-t border-border/60 safe-bottom">
+              <button
+                type="button"
+                onClick={() => setShowCouponSheet(false)}
+                className="w-full py-3 rounded-xl bg-primary text-white font-semibold text-sm hover:bg-primary-dark transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Ineligible Challans Info Modal */}
       {showIneligibleInfo && (
         <div
@@ -893,6 +1165,7 @@ export function PaymentPage() {
           {/* Right: Payment Summary (desktop only) */}
           <div className="hidden lg:block lg:sticky lg:top-20 lg:self-start min-w-0 space-y-4">
             {pageState !== 'loading' && pledgeCard}
+            {pageState !== 'loading' && couponCard}
             {pageState === 'loading' ? (
               <div className="bg-white rounded-2xl p-6 space-y-4">
                 <Skeleton className="h-5 w-56" />
@@ -956,6 +1229,18 @@ export function PaymentPage() {
                     <ResolutionBadge />
                   </div>
                   <ExpressSummary summary={displaySummary} />
+                </div>
+              )}
+
+              {couponDiscount > 0 && (
+                <div className="mt-3 flex justify-between items-baseline rounded-lg bg-emerald-50 px-4 py-2.5">
+                  <span className="font-display text-sm font-semibold text-emerald-700 inline-flex items-center gap-1.5">
+                    <TicketPercent className="w-4 h-4" aria-hidden />
+                    Coupon ({appliedCoupon!.code})
+                  </span>
+                  <span className="font-display text-sm font-semibold text-emerald-700 tabular-nums">
+                    -₹{formatINR(couponDiscount)}
+                  </span>
                 </div>
               )}
 
@@ -1037,6 +1322,7 @@ export function PaymentPage() {
         ) : (
         <>
         {pledgeCard && <div className="lg:hidden mt-4">{pledgeCard}</div>}
+        <div className="lg:hidden mt-4">{couponCard}</div>
         <details open className="lg:hidden mt-4 mb-20 bg-white rounded-xl border border-border shadow-sm overflow-hidden">
           <summary className="flex items-center justify-between p-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
             <span className="font-display font-semibold text-sm text-text-primary">{t.payment.paymentSummary}</span>
@@ -1079,6 +1365,18 @@ export function PaymentPage() {
                   <ResolutionBadge />
                 </div>
                 <ExpressSummary summary={displaySummary} />
+              </div>
+            )}
+
+            {couponDiscount > 0 && (
+              <div className="flex justify-between items-baseline rounded-lg bg-emerald-50 px-4 py-2.5">
+                <span className="font-display text-sm font-semibold text-emerald-700 inline-flex items-center gap-1.5">
+                  <TicketPercent className="w-4 h-4" aria-hidden />
+                  Coupon ({appliedCoupon!.code})
+                </span>
+                <span className="font-display text-sm font-semibold text-emerald-700 tabular-nums">
+                  -₹{formatINR(couponDiscount)}
+                </span>
               </div>
             )}
 
