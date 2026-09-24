@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
-import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check, Clock, TicketPercent, ChevronRight, BadgeCheck } from 'lucide-react'
+import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check, Clock, TicketPercent, ChevronRight, BadgeCheck, Coins } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { Skeleton } from '@/components/shared/Skeleton'
@@ -20,6 +20,12 @@ import {
 
 const formatINR = (n: number) => n.toLocaleString('en-IN')
 
+const CREDIT_AVAILABLE_COINS = 600
+const CREDIT_USABLE_COINS = 540
+const CREDIT_EXPIRING_COINS = 300
+const CREDIT_EXPIRY_LABEL = '27 Sep'
+const CREDIT_CAP_PCT = 0.10
+
 type Coupon = {
   id: string
   code: string
@@ -28,6 +34,8 @@ type Coupon = {
   discount: number
   minAmount?: number
   tag?: string
+  validFrom: string
+  validTo: string
 }
 
 const COUPONS: Coupon[] = [
@@ -37,7 +45,8 @@ const COUPONS: Coupon[] = [
     title: 'Flat ₹100 off',
     description: 'Welcome bonus on your first payment.',
     discount: 100,
-    tag: 'New user',
+    validFrom: '01 Sep 2026',
+    validTo: '31 Dec 2026',
   },
   {
     id: 'SAVE500',
@@ -46,6 +55,8 @@ const COUPONS: Coupon[] = [
     description: 'On payments above ₹5,000.',
     discount: 500,
     minAmount: 5000,
+    validFrom: '15 Sep 2026',
+    validTo: '31 Oct 2026',
   },
   {
     id: 'PAYFAST300',
@@ -53,7 +64,8 @@ const COUPONS: Coupon[] = [
     title: 'Flat ₹300 off',
     description: 'Limited-time offer on all challans.',
     discount: 300,
-    tag: 'Popular',
+    validFrom: '20 Sep 2026',
+    validTo: '20 Oct 2026',
   },
   {
     id: 'XPRESS750',
@@ -62,6 +74,8 @@ const COUPONS: Coupon[] = [
     description: 'On payments above ₹8,000.',
     discount: 750,
     minAmount: 8000,
+    validFrom: '01 Sep 2026',
+    validTo: '30 Nov 2026',
   },
 ]
 
@@ -154,6 +168,7 @@ export function PaymentPage() {
     effectiveChallans.some((c) => c.type === 'court' && c.expressEligible !== false),
   )
   const [showOnlineChallans, setShowOnlineChallans] = useState(false)
+  const [creditEnabled, setCreditEnabled] = useState(false)
 
   const pledgeActive = pledgeChecked && !isPremium && displaySummary.expressCount === 0
   const subtotalAfterPledge = pledgeActive
@@ -168,7 +183,11 @@ export function PaymentPage() {
     appliedCoupon && couponEligible(appliedCoupon)
       ? Math.min(appliedCoupon.discount, subtotalAfterPledge)
       : 0
-  const payNowTotal = Math.max(0, subtotalAfterPledge - couponDiscount)
+  const subtotalAfterCoupon = Math.max(0, subtotalAfterPledge - couponDiscount)
+  const creditCap = Math.floor(subtotalAfterCoupon * CREDIT_CAP_PCT)
+  const creditEligibleCoins = Math.min(CREDIT_USABLE_COINS, creditCap || CREDIT_USABLE_COINS)
+  const creditApplied = creditEnabled ? Math.min(creditEligibleCoins, subtotalAfterCoupon) : 0
+  const payNowTotal = Math.max(0, subtotalAfterCoupon - creditApplied)
   const effectiveChallanIds = useMemo(() => effectiveChallans.map((c) => c.id), [effectiveChallans])
   const selectedCount = effectiveChallanIds.length
 
@@ -225,7 +244,7 @@ export function PaymentPage() {
         />
         <p
           className={cn(
-            'font-display text-base sm:text-lg font-bold leading-tight',
+            'font-display text-sm sm:text-base font-bold leading-tight whitespace-nowrap truncate min-w-0',
             pledgeChecked ? 'text-emerald-700' : 'text-amber-700'
           )}
         >
@@ -320,6 +339,87 @@ export function PaymentPage() {
     </div>
   )
 
+  const creditToggleDisabled = creditEligibleCoins === 0
+  const creditCard = (
+    <div className="bg-white rounded-2xl border border-border/60 overflow-hidden">
+      <div className="p-4 sm:p-5">
+        <h3 className="font-display font-bold text-base text-text-primary mb-3">
+          ChallanPay Credit
+        </h3>
+        <div
+          className="flex items-start gap-3 rounded-xl p-3 transition-colors"
+          style={{ backgroundColor: '#F7F7F7' }}
+        >
+          <span
+            className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-yellow-100"
+            aria-hidden
+          >
+            <Coins className="w-5 h-5 text-yellow-600" strokeWidth={2.25} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-display font-bold text-sm text-text-primary">
+                Usable Balance: <span className="tabular-nums">{CREDIT_USABLE_COINS}</span>
+              </p>
+              {creditEnabled && creditApplied > 0 && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 whitespace-nowrap">
+                  <BadgeCheck className="w-3 h-3" aria-hidden />
+                  Applied
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-text-light mt-1">
+              Total credits: <span className="font-semibold text-text-primary tabular-nums">{CREDIT_AVAILABLE_COINS}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={creditEnabled}
+            aria-label={creditEnabled ? 'Disable ChallanPay Credit' : 'Apply ChallanPay Credit'}
+            disabled={creditToggleDisabled}
+            onClick={() => {
+              const next = !creditEnabled
+              setCreditEnabled(next)
+              if (next) {
+                toast.success(`${creditApplied || creditEligibleCoins} coins applied 🪙`)
+              } else {
+                toast.success('Credit removed')
+              }
+            }}
+            className={cn(
+              'relative flex-shrink-0 h-6 w-11 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+              creditToggleDisabled
+                ? 'bg-gray-200 cursor-not-allowed'
+                : creditEnabled
+                  ? 'bg-emerald-500'
+                  : 'bg-gray-300',
+            )}
+          >
+            <span
+              aria-hidden
+              className={cn(
+                'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200',
+                creditEnabled ? 'translate-x-5' : 'translate-x-0',
+              )}
+            />
+          </button>
+        </div>
+        <p className="text-[11px] text-text-light/90 leading-relaxed mt-3">
+          Credit is capped at 10% of your cart. {CREDIT_EXPIRING_COINS} coins expire on {CREDIT_EXPIRY_LABEL}. Credit is not cash and cannot be withdrawn.{' '}
+          <a
+            href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-text-secondary hover:text-primary"
+          >
+            Terms
+          </a>
+        </p>
+      </div>
+    </div>
+  )
+
   const handlePayment = () => {
     const txnId = `TXN${Date.now()}`
     recordTransaction(txnId, payNowTotal, effectiveChallanIds.length)
@@ -361,9 +461,6 @@ export function PaymentPage() {
                 <h3 className="font-display text-lg font-bold text-text-primary">
                   Apply Coupon
                 </h3>
-                <p className="text-xs text-text-light mt-0.5">
-                  Choose an offer to save on your payment.
-                </p>
               </div>
               <button
                 onClick={() => setShowCouponSheet(false)}
@@ -382,70 +479,88 @@ export function PaymentPage() {
                   <div
                     key={c.id}
                     className={cn(
-                      'rounded-xl border p-4 transition-colors',
+                      'relative flex overflow-hidden rounded-xl border transition-colors',
                       isApplied
-                        ? 'border-emerald-400 bg-emerald-50/60'
+                        ? 'border-primary bg-primary/5'
                         : eligible
                           ? 'border-border/70 bg-white'
                           : 'border-border/60 bg-gray-50 opacity-70',
                     )}
                   >
-                    <div className="flex items-start gap-3">
+                    {/* Left vertical FLAT OFF ribbon */}
+                    <div
+                      className={cn(
+                        'flex-shrink-0 w-8 flex items-center justify-center',
+                        eligible ? 'bg-primary' : 'bg-gray-400',
+                      )}
+                    >
                       <span
-                        className={cn(
-                          'flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full',
-                          isApplied ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-50 text-emerald-700',
-                        )}
+                        className="text-white text-[10px] font-bold tracking-widest whitespace-nowrap"
+                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
                       >
-                        <TicketPercent className="w-5 h-5" aria-hidden />
+                        {c.code}
                       </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-display font-bold text-sm text-text-primary">
-                            {c.title}
+                    </div>
+
+                    {/* Body */}
+                    <div className="flex-1 min-w-0 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-display font-bold text-sm text-text-primary tracking-wide">
+                              {c.code}
+                            </p>
+                            {c.tag && (
+                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
+                                {c.tag}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs font-semibold text-emerald-600 mt-0.5">
+                            Save ₹{formatINR(c.discount)} on this order!
                           </p>
-                          {c.tag && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
-                              {c.tag}
-                            </span>
-                          )}
                         </div>
-                        <p className="text-xs text-text-light mt-0.5">{c.description}</p>
-                        <div className="mt-2 flex items-center gap-2 flex-wrap">
-                          <span className="inline-block font-mono text-[11px] font-semibold text-text-primary tracking-wider px-2 py-1 rounded border border-dashed border-border bg-white">
-                            {c.code}
-                          </span>
-                          {!eligible && (
-                            <span className="text-[11px] font-medium text-rose-700">
-                              Min ₹{formatINR(c.minAmount ?? 0)} required
-                            </span>
-                          )}
+                        <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                          <button
+                            type="button"
+                            disabled={!eligible}
+                            onClick={() => {
+                              if (isApplied) {
+                                setAppliedCouponId(null)
+                                toast.success('Coupon removed')
+                              } else {
+                                setAppliedCouponId(c.id)
+                                toast.success(`Coupon ${c.code} applied 🎉`)
+                                setShowCouponSheet(false)
+                              }
+                            }}
+                            className={cn(
+                              'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                              isApplied
+                                ? 'bg-white border border-primary text-primary hover:bg-primary/10'
+                                : eligible
+                                  ? 'bg-primary text-white hover:bg-primary-dark'
+                                  : 'bg-gray-200 text-gray-400 cursor-not-allowed',
+                            )}
+                          >
+                            {isApplied ? 'Remove' : 'Apply'}
+                          </button>
+                          <p className="text-[10px] text-text-light whitespace-nowrap">
+                            Valid {c.validFrom} – {c.validTo}
+                          </p>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        disabled={!eligible}
-                        onClick={() => {
-                          if (isApplied) {
-                            setAppliedCouponId(null)
-                            toast.success('Coupon removed')
-                          } else {
-                            setAppliedCouponId(c.id)
-                            toast.success(`Coupon ${c.code} applied 🎉`)
-                            setShowCouponSheet(false)
-                          }
-                        }}
-                        className={cn(
-                          'flex-shrink-0 px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors',
-                          isApplied
-                            ? 'bg-white border border-emerald-400 text-emerald-700 hover:bg-emerald-50'
-                            : eligible
-                              ? 'bg-primary text-white hover:bg-primary-dark'
-                              : 'bg-gray-200 text-gray-400 cursor-not-allowed',
-                        )}
-                      >
-                        {isApplied ? 'Remove' : 'Apply'}
-                      </button>
+
+                      <div className="my-3 border-t border-dashed border-border" />
+
+                      <p className="text-xs text-text-secondary">
+                        {c.description}
+                      </p>
+                      {!eligible && (
+                        <p className="mt-2 text-[11px] font-medium text-rose-700">
+                          Min ₹{formatINR(c.minAmount ?? 0)} required
+                        </p>
+                      )}
                     </div>
                   </div>
                 )
@@ -877,58 +992,40 @@ export function PaymentPage() {
                       <li
                         key={c.id}
                         className={cn(
-                          'flex items-center gap-2 sm:gap-3 px-4 sm:px-5 py-4 sm:py-5 rounded-xl border transition-colors min-w-0',
+                          'px-4 sm:px-5 py-4 sm:py-5 rounded-xl border transition-colors min-w-0',
                           isExpress ? 'border-amber-300 bg-amber-50/50' : 'border-gray-300 bg-white',
                           premiumOnly && 'opacity-60'
                         )}
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-baseline gap-x-3 sm:gap-x-6 gap-y-1 min-w-0 flex-nowrap sm:flex-wrap">
+                        <div className="flex items-baseline justify-between gap-3 min-w-0">
+                          <div className="flex items-baseline gap-2 sm:gap-3 min-w-0 flex-1">
                             <span className="font-mono text-xs text-text-light tabular-nums flex-shrink-0">
                               {idx + 1}.
                             </span>
                             <span className="font-mono font-semibold text-xs sm:text-sm text-text-primary truncate min-w-0">
                               {c.challanNumber}
                             </span>
-                            {!premiumOnly && (
-                              <span className="font-display font-bold text-sm text-text-primary whitespace-nowrap tabular-nums flex-shrink-0">
-                                ₹{formatINR(c.amount)}
-                              </span>
-                            )}
-                            {premiumOnly && (
-                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap flex-shrink-0">
-                                {t.payment.eligibleForPremium}
-                              </span>
-                            )}
                           </div>
-                          {c.violation && (
-                            <p className="text-sm text-text-light mt-1 ml-6 sm:ml-9 truncate max-w-[200px] sm:max-w-[360px]">{c.violation}</p>
+                          {!premiumOnly && (
+                            <span className="font-display font-bold text-sm sm:text-base text-text-primary whitespace-nowrap tabular-nums flex-shrink-0">
+                              ₹{formatINR(c.amount)}
+                            </span>
+                          )}
+                          {premiumOnly && (
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap flex-shrink-0">
+                              {t.payment.eligibleForPremium}
+                            </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {isCourt && canExpress ? (
-                            <div
-                              className={cn(
-                                'inline-flex items-center gap-2 pl-2 pr-1 py-1 rounded-full transition-colors',
-                                isExpress ? 'bg-amber-100' : 'bg-gray-100'
-                              )}
-                            >
-                              <span
-                                className={cn(
-                                  'inline-flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap transition-colors',
-                                  isExpress ? 'text-amber-800' : 'text-text-secondary'
-                                )}
-                              >
-                                {isExpress && (
-                                  <img
-                                    src="/images/resolution-premium.png"
-                                    alt=""
-                                    aria-hidden
-                                    className="w-6 h-6 sm:w-8 sm:h-8 object-contain"
-                                  />
-                                )}
-                                {isExpress ? 'XPress: 10 Days' : '45 Days'}
-                              </span>
+                        <div className="mt-2 ml-6 sm:ml-8 flex items-center justify-between gap-3 min-w-0">
+                          <p className={cn(
+                            'text-xs sm:text-sm text-text-light truncate min-w-0 flex-1',
+                            !c.violation && 'invisible'
+                          )}>
+                            {c.violation || '—'}
+                          </p>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {isCourt && canExpress ? (
                               <button
                                 type="button"
                                 role="switch"
@@ -936,50 +1033,76 @@ export function PaymentPage() {
                                 aria-label={`XPress delivery for challan ${c.challanNumber}`}
                                 onClick={() => toggleRowExpress(c.id)}
                                 className={cn(
-                                  'relative flex-shrink-0 h-5 w-9 sm:h-6 sm:w-11 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
-                                  isExpress ? 'bg-emerald-500' : 'bg-gray-300'
+                                  'inline-flex items-center gap-2 pl-2.5 pr-1 py-1 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+                                  isExpress ? 'bg-amber-100' : 'bg-gray-100'
                                 )}
                               >
                                 <span
                                   className={cn(
-                                    'absolute top-0.5 left-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white shadow-md transition-transform duration-200',
-                                    isExpress ? 'translate-x-4 sm:translate-x-5' : 'translate-x-0'
+                                    'inline-flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap transition-colors min-w-[70px] justify-center',
+                                    isExpress ? 'text-amber-800' : 'text-text-secondary'
                                   )}
-                                />
+                                >
+                                  {isExpress ? (
+                                    <>
+                                      <img
+                                        src="/images/resolution-premium.png"
+                                        alt=""
+                                        aria-hidden
+                                        className="w-4 h-4 object-contain"
+                                      />
+                                      10 Days
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Clock className="w-3 h-3" aria-hidden />
+                                      45 Days
+                                    </>
+                                  )}
+                                </span>
+                                <span
+                                  aria-hidden
+                                  className={cn(
+                                    'relative flex-shrink-0 h-5 w-9 rounded-full transition-colors duration-200',
+                                    isExpress ? 'bg-emerald-500' : 'bg-gray-300'
+                                  )}
+                                >
+                                  <span
+                                    className={cn(
+                                      'absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-md transition-transform duration-200',
+                                      isExpress ? 'translate-x-4' : 'translate-x-0'
+                                    )}
+                                  />
+                                </span>
                               </button>
-                            </div>
-                          ) : isCourt ? (
-                            <div className="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full bg-gray-100">
-                              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-text-secondary whitespace-nowrap">
+                            ) : isCourt ? (
+                              <div className="inline-flex items-center gap-1.5 pl-2 pr-1 py-1 rounded-full bg-gray-100">
+                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-text-secondary whitespace-nowrap">
+                                  <Clock className="w-3 h-3" aria-hidden />
+                                  45 Days
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setShowExpressIneligibleInfo(true)}
+                                  aria-label="Why is XPress not available?"
+                                  className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full text-text-light hover:text-text-primary hover:bg-gray-200 transition-colors"
+                                >
+                                  <Info className="w-3.5 h-3.5" />
+                                </button>
+                                <span
+                                  aria-hidden
+                                  className="relative flex-shrink-0 h-5 w-9 rounded-full bg-gray-200 opacity-70"
+                                >
+                                  <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow-sm" />
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-text-secondary whitespace-nowrap">
                                 <Clock className="w-3 h-3" aria-hidden />
-                                45 Days
+                                15 Days
                               </span>
-                              <button
-                                type="button"
-                                onClick={() => setShowExpressIneligibleInfo(true)}
-                                aria-label="Why is XPress not available?"
-                                className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full text-text-light hover:text-text-primary hover:bg-gray-200 transition-colors"
-                              >
-                                <Info className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                role="switch"
-                                aria-checked={false}
-                                aria-disabled
-                                disabled
-                                aria-label={`XPress delivery not available for challan ${c.challanNumber}`}
-                                className="relative flex-shrink-0 h-5 w-9 sm:h-6 sm:w-11 rounded-full bg-gray-200 opacity-70 cursor-not-allowed"
-                              >
-                                <span className="absolute top-0.5 left-0.5 w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white shadow-sm" />
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-text-secondary whitespace-nowrap">
-                              <Clock className="w-3 h-3" aria-hidden />
-                              15 Days
-                            </span>
-                          )}
+                            )}
+                          </div>
                         </div>
                       </li>
                     )
@@ -1166,6 +1289,7 @@ export function PaymentPage() {
           <div className="hidden lg:block lg:sticky lg:top-20 lg:self-start min-w-0 space-y-4">
             {pageState !== 'loading' && pledgeCard}
             {pageState !== 'loading' && couponCard}
+            {pageState !== 'loading' && creditCard}
             {pageState === 'loading' ? (
               <div className="bg-white rounded-2xl p-6 space-y-4">
                 <Skeleton className="h-5 w-56" />
@@ -1240,6 +1364,18 @@ export function PaymentPage() {
                   </span>
                   <span className="font-display text-sm font-semibold text-emerald-700 tabular-nums">
                     -₹{formatINR(couponDiscount)}
+                  </span>
+                </div>
+              )}
+
+              {creditApplied > 0 && (
+                <div className="mt-3 flex justify-between items-baseline rounded-lg bg-amber-50 px-4 py-2.5">
+                  <span className="font-display text-sm font-semibold text-amber-800 inline-flex items-center gap-1.5">
+                    <Coins className="w-4 h-4" aria-hidden />
+                    Credit applied ({creditApplied} coins)
+                  </span>
+                  <span className="font-display text-sm font-semibold text-amber-800 tabular-nums">
+                    -₹{formatINR(creditApplied)}
                   </span>
                 </div>
               )}
@@ -1323,6 +1459,7 @@ export function PaymentPage() {
         <>
         {pledgeCard && <div className="lg:hidden mt-4">{pledgeCard}</div>}
         <div className="lg:hidden mt-4">{couponCard}</div>
+        <div className="lg:hidden mt-4">{creditCard}</div>
         <details open className="lg:hidden mt-4 mb-20 bg-white rounded-xl border border-border shadow-sm overflow-hidden">
           <summary className="flex items-center justify-between p-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
             <span className="font-display font-semibold text-sm text-text-primary">{t.payment.paymentSummary}</span>
@@ -1376,6 +1513,18 @@ export function PaymentPage() {
                 </span>
                 <span className="font-display text-sm font-semibold text-emerald-700 tabular-nums">
                   -₹{formatINR(couponDiscount)}
+                </span>
+              </div>
+            )}
+
+            {creditApplied > 0 && (
+              <div className="flex justify-between items-baseline rounded-lg bg-amber-50 px-4 py-2.5">
+                <span className="font-display text-sm font-semibold text-amber-800 inline-flex items-center gap-1.5">
+                  <Coins className="w-4 h-4" aria-hidden />
+                  Credit applied ({creditApplied} coins)
+                </span>
+                <span className="font-display text-sm font-semibold text-amber-800 tabular-nums">
+                  -₹{formatINR(creditApplied)}
                 </span>
               </div>
             )}
