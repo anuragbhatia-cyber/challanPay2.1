@@ -36,6 +36,8 @@ type Coupon = {
   tag?: string
   validFrom: string
   validTo: string
+  disabled?: boolean
+  disabledReason?: string
 }
 
 const COUPONS: Coupon[] = [
@@ -57,6 +59,8 @@ const COUPONS: Coupon[] = [
     minAmount: 5000,
     validFrom: '15 Sep 2026',
     validTo: '31 Oct 2026',
+    disabled: true,
+    disabledReason: 'Not applicable on this order',
   },
   {
     id: 'PAYFAST300',
@@ -76,6 +80,8 @@ const COUPONS: Coupon[] = [
     minAmount: 8000,
     validFrom: '01 Sep 2026',
     validTo: '30 Nov 2026',
+    disabled: true,
+    disabledReason: 'Valid only on Xpress payments',
   },
 ]
 
@@ -178,7 +184,8 @@ export function PaymentPage() {
     () => COUPONS.find((c) => c.id === appliedCouponId) ?? null,
     [appliedCouponId],
   )
-  const couponEligible = (c: Coupon) => subtotalAfterPledge >= (c.minAmount ?? 0)
+  const couponEligible = (c: Coupon) =>
+    !c.disabled && subtotalAfterPledge >= (c.minAmount ?? 0)
   const couponDiscount =
     appliedCoupon && couponEligible(appliedCoupon)
       ? Math.min(appliedCoupon.discount, subtotalAfterPledge)
@@ -487,20 +494,14 @@ export function PaymentPage() {
                           : 'border-border/60 bg-gray-50 opacity-70',
                     )}
                   >
-                    {/* Left vertical FLAT OFF ribbon */}
+                    {/* Left color rail */}
                     <div
+                      aria-hidden
                       className={cn(
-                        'flex-shrink-0 w-8 flex items-center justify-center',
+                        'flex-shrink-0 w-2',
                         eligible ? 'bg-primary' : 'bg-gray-400',
                       )}
-                    >
-                      <span
-                        className="text-white text-[10px] font-bold tracking-widest whitespace-nowrap"
-                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
-                      >
-                        {c.code}
-                      </span>
-                    </div>
+                    />
 
                     {/* Body */}
                     <div className="flex-1 min-w-0 p-4">
@@ -558,7 +559,8 @@ export function PaymentPage() {
                       </p>
                       {!eligible && (
                         <p className="mt-2 text-[11px] font-medium text-rose-700">
-                          Min ₹{formatINR(c.minAmount ?? 0)} required
+                          {c.disabledReason ??
+                            `Min ₹${formatINR(c.minAmount ?? 0)} required`}
                         </p>
                       )}
                     </div>
