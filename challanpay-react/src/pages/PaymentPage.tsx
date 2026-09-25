@@ -25,6 +25,8 @@ const CREDIT_USABLE_COINS = 540
 const CREDIT_EXPIRING_COINS = 300
 const CREDIT_EXPIRY_LABEL = '27 Sep'
 const CREDIT_CAP_PCT = 0.10
+// Temporarily hide the ChallanPay Credit block; flip to true to restore.
+const SHOW_CREDIT_CARD = false
 
 type Coupon = {
   id: string
@@ -277,7 +279,14 @@ export function PaymentPage() {
   const couponCard = featuredCoupon ? (
     <div className="bg-white rounded-2xl border border-border/60 overflow-hidden">
       <div className="p-3 sm:p-4">
-        <div className="flex overflow-hidden rounded-xl border border-border/70 bg-white">
+        <div
+          className={cn(
+            'flex overflow-hidden rounded-xl border',
+            isFeaturedApplied
+              ? 'border-primary bg-primary/5'
+              : 'border-border/70 bg-white',
+          )}
+        >
           {/* Left color rail */}
           <div
             aria-hidden
@@ -330,6 +339,9 @@ export function PaymentPage() {
                 >
                   {isFeaturedApplied ? 'Remove' : 'Apply'}
                 </button>
+                <p className="text-[10px] text-text-light whitespace-nowrap">
+                  Valid {featuredCoupon.validFrom} – {featuredCoupon.validTo}
+                </p>
               </div>
             </div>
 
@@ -337,9 +349,6 @@ export function PaymentPage() {
 
             <p className="text-xs text-text-secondary">
               {featuredCoupon.description}
-            </p>
-            <p className="mt-1 text-[10px] text-text-light">
-              Valid {featuredCoupon.validFrom} – {featuredCoupon.validTo}
             </p>
           </div>
         </div>
@@ -543,7 +552,9 @@ export function PaymentPage() {
                             )}
                           </div>
                           <p className="text-xs font-semibold text-emerald-600 mt-0.5">
-                            Save ₹{formatINR(c.discount)} on this order!
+                            {isApplied
+                              ? `${c.code} applied · saved ₹${formatINR(couponDiscount)}`
+                              : `Save ₹${formatINR(c.discount)} on this order!`}
                           </p>
                         </div>
                         <div className="flex-shrink-0 flex flex-col items-end gap-1">
@@ -1316,7 +1327,7 @@ export function PaymentPage() {
           <div className="hidden lg:block lg:sticky lg:top-20 lg:self-start min-w-0 space-y-4">
             {pageState !== 'loading' && pledgeCard}
             {pageState !== 'loading' && couponCard}
-            {pageState !== 'loading' && creditCard}
+            {pageState !== 'loading' && SHOW_CREDIT_CARD && creditCard}
             {pageState === 'loading' ? (
               <div className="bg-white rounded-2xl p-6 space-y-4">
                 <Skeleton className="h-5 w-56" />
@@ -1486,7 +1497,7 @@ export function PaymentPage() {
         <>
         {pledgeCard && <div className="lg:hidden mt-4">{pledgeCard}</div>}
         <div className="lg:hidden mt-4">{couponCard}</div>
-        <div className="lg:hidden mt-4">{creditCard}</div>
+        {SHOW_CREDIT_CARD && <div className="lg:hidden mt-4">{creditCard}</div>}
         <details open className="lg:hidden mt-4 mb-20 bg-white rounded-xl border border-border shadow-sm overflow-hidden">
           <summary className="flex items-center justify-between p-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
             <span className="font-display font-semibold text-sm text-text-primary">{t.payment.paymentSummary}</span>
