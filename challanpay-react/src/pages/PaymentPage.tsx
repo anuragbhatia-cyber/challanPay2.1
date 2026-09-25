@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
 import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check, Clock, TicketPercent, ChevronRight, BadgeCheck, Coins } from 'lucide-react'
@@ -88,6 +88,8 @@ const COUPONS: Coupon[] = [
 export function PaymentPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const availableCoupons = searchParams.get('coupons') === 'empty' ? [] : COUPONS
 
   const challans = useChallanStore((s) => s.challans)
   const selectedChallanIds = useChallanStore((s) => s.selectedChallanIds)
@@ -181,8 +183,8 @@ export function PaymentPage() {
     ? Math.max(0, displaySummary.subtotal - PLEDGE_REWARD)
     : displaySummary.subtotal
   const appliedCoupon = useMemo(
-    () => COUPONS.find((c) => c.id === appliedCouponId) ?? null,
-    [appliedCouponId],
+    () => availableCoupons.find((c) => c.id === appliedCouponId) ?? null,
+    [appliedCouponId, availableCoupons],
   )
   const couponEligible = (c: Coupon) =>
     !c.disabled && subtotalAfterPledge >= (c.minAmount ?? 0)
@@ -261,76 +263,85 @@ export function PaymentPage() {
     </div>
   ) : null
 
-  const featuredCoupon =
+  const featuredCoupon:
+    | Coupon
+    | undefined =
     appliedCoupon && couponEligible(appliedCoupon)
       ? appliedCoupon
-      : COUPONS.find((c) => couponEligible(c)) ?? COUPONS[0]
-  const featuredEligible = couponEligible(featuredCoupon)
-  const isFeaturedApplied = appliedCouponId === featuredCoupon.id && featuredEligible
-  const otherOffersCount = Math.max(0, COUPONS.length - 1)
+      : availableCoupons.find((c) => couponEligible(c)) ?? availableCoupons[0]
+  const featuredEligible = !!featuredCoupon && couponEligible(featuredCoupon)
+  const isFeaturedApplied =
+    !!featuredCoupon && appliedCouponId === featuredCoupon.id && featuredEligible
+  const otherOffersCount = Math.max(0, availableCoupons.length - 1)
 
-  const couponCard = (
+  const couponCard = featuredCoupon ? (
     <div className="bg-white rounded-2xl border border-border/60 overflow-hidden">
-      <div className="p-4 sm:p-5">
-        <div className="flex items-center gap-3">
-          <span
+      <div className="p-3 sm:p-4">
+        <div className="flex overflow-hidden rounded-xl border border-border/70 bg-white">
+          {/* Left color rail */}
+          <div
+            aria-hidden
             className={cn(
-              'flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full',
-              isFeaturedApplied ? 'bg-emerald-100 text-emerald-700' : 'bg-emerald-50 text-emerald-700',
+              'flex-shrink-0 w-2',
+              featuredEligible ? 'bg-primary' : 'bg-gray-400',
             )}
-          >
-            <TicketPercent className="w-5 h-5" aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="font-display font-bold text-sm text-text-primary">
-                {featuredCoupon.title}
-              </p>
-              {featuredCoupon.tag && (
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
-                  {featuredCoupon.tag}
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-text-light mt-0.5 truncate">
-              {isFeaturedApplied ? (
-                <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
-                  <BadgeCheck className="w-3.5 h-3.5" aria-hidden />
-                  {featuredCoupon.code} applied · saved ₹{formatINR(couponDiscount)}
-                </span>
-              ) : (
-                <>
-                  <span className="font-mono font-semibold text-text-secondary">
+          />
+          {/* Body */}
+          <div className="flex-1 min-w-0 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-display font-bold text-sm text-text-primary tracking-wide">
                     {featuredCoupon.code}
-                  </span>
-                  <span> · {featuredCoupon.description}</span>
-                </>
-              )}
+                  </p>
+                  {featuredCoupon.tag && (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
+                      {featuredCoupon.tag}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs font-semibold text-emerald-600 mt-0.5">
+                  {isFeaturedApplied
+                    ? `${featuredCoupon.code} applied · saved ₹${formatINR(couponDiscount)}`
+                    : `Save ₹${formatINR(featuredCoupon.discount)} on this order!`}
+                </p>
+              </div>
+              <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                <button
+                  type="button"
+                  disabled={!featuredEligible}
+                  onClick={() => {
+                    if (isFeaturedApplied) {
+                      setAppliedCouponId(null)
+                      toast.success('Coupon removed')
+                    } else {
+                      setAppliedCouponId(featuredCoupon.id)
+                      toast.success(`Coupon ${featuredCoupon.code} applied 🎉`)
+                    }
+                  }}
+                  className={cn(
+                    'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                    isFeaturedApplied
+                      ? 'bg-white border border-primary text-primary hover:bg-primary/10'
+                      : featuredEligible
+                        ? 'bg-primary text-white hover:bg-primary-dark'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed',
+                  )}
+                >
+                  {isFeaturedApplied ? 'Remove' : 'Apply'}
+                </button>
+              </div>
+            </div>
+
+            <div className="my-3 border-t border-dashed border-border" />
+
+            <p className="text-xs text-text-secondary">
+              {featuredCoupon.description}
+            </p>
+            <p className="mt-1 text-[10px] text-text-light">
+              Valid {featuredCoupon.validFrom} – {featuredCoupon.validTo}
             </p>
           </div>
-          <button
-            type="button"
-            disabled={!featuredEligible}
-            onClick={() => {
-              if (isFeaturedApplied) {
-                setAppliedCouponId(null)
-                toast.success('Coupon removed')
-              } else {
-                setAppliedCouponId(featuredCoupon.id)
-                toast.success(`Coupon ${featuredCoupon.code} applied 🎉`)
-              }
-            }}
-            className={cn(
-              'flex-shrink-0 px-3.5 py-2 rounded-lg text-xs font-semibold bg-white border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
-              isFeaturedApplied
-                ? 'border-emerald-400 text-emerald-700 hover:bg-emerald-50'
-                : featuredEligible
-                  ? 'border-primary text-primary hover:bg-primary/5'
-                  : 'border-gray-200 text-gray-400 cursor-not-allowed',
-            )}
-          >
-            {isFeaturedApplied ? 'Remove' : 'Apply'}
-          </button>
         </div>
       </div>
       {otherOffersCount > 0 && (
@@ -339,10 +350,24 @@ export function PaymentPage() {
           onClick={() => setShowCouponSheet(true)}
           className="w-full flex items-center justify-between px-4 sm:px-5 py-2.5 border-t border-border/60 text-xs font-semibold text-primary hover:bg-primary/[0.03] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
         >
-          <span>View all {COUPONS.length} offers</span>
+          <span>View all {availableCoupons.length} offers</span>
           <ChevronRight className="w-4 h-4" aria-hidden />
         </button>
       )}
+    </div>
+  ) : (
+    <div className="bg-white rounded-2xl border border-border/60 p-5 sm:p-6 flex items-start gap-3">
+      <span className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-500">
+        <TicketPercent className="w-5 h-5" aria-hidden />
+      </span>
+      <div className="min-w-0">
+        <p className="font-display font-bold text-sm text-text-primary">
+          No coupons available
+        </p>
+        <p className="text-xs text-text-light mt-0.5">
+          Check back soon — new offers drop regularly.
+        </p>
+      </div>
     </div>
   )
 
@@ -479,7 +504,7 @@ export function PaymentPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-              {COUPONS.map((c) => {
+              {availableCoupons.map((c) => {
                 const eligible = couponEligible(c)
                 const isApplied = appliedCouponId === c.id
                 return (
