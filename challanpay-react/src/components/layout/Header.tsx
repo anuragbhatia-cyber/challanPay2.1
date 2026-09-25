@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router'
-import { Menu, X, User, ChevronDown, Calendar, LogOut, Globe } from 'lucide-react'
+import { Menu, X, User, ChevronDown, Calendar, LogOut, Globe, Wallet } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUserStore } from '@/stores/userStore'
 import { useLanguageStore, type Language } from '@/stores/languageStore'
@@ -10,6 +10,9 @@ const LANGUAGES = [
   { code: 'en' as const, label: 'English', short: 'EN' },
   { code: 'hi' as const, label: 'हिन्दी', short: 'HI' },
 ]
+
+// Temporarily hide the Wallet nav entry; flip to true to restore.
+const SHOW_WALLET_NAV = false
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -207,6 +210,16 @@ export function Header() {
                 <User className="w-4 h-4" />
                 {t.header.myProfile}
               </Link>
+              {SHOW_WALLET_NAV && (
+                <Link
+                  to="/wallet"
+                  className="flex items-center gap-3 px-4 py-3 min-h-11 text-sm text-text-secondary hover:bg-gray-50 transition-colors"
+                  onClick={() => setIsProfileOpen(false)}
+                >
+                  <Wallet className="w-4 h-4" />
+                  {t.header.wallet}
+                </Link>
+              )}
               <hr className="my-1 border-border" />
               <button
                 onClick={handleLogout}
@@ -362,6 +375,16 @@ export function Header() {
                 <User className="w-5 h-5" />
                 {t.header.myProfile}
               </Link>
+              {SHOW_WALLET_NAV && (
+                <Link
+                  to="/wallet"
+                  className="flex items-center gap-3 px-4 py-3.5 min-h-11 text-lg font-medium text-text-primary hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <Wallet className="w-5 h-5" />
+                  {t.header.wallet}
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-3 px-4 py-3.5 min-h-11 text-lg font-medium text-text-primary hover:bg-gray-50 rounded-lg transition-colors w-full text-left"

@@ -10,6 +10,7 @@ export const en = {
     login: 'Login',
     trackMyChallans: 'Track My Challans',
     myProfile: 'My Profile',
+    wallet: 'Wallet',
     logout: 'Logout',
   },
 

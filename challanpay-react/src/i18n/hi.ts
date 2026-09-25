@@ -12,6 +12,7 @@ export const hi: TranslationKeys = {
     login: 'लॉगिन',
     trackMyChallans: 'मेरे चालान ट्रैक करें',
     myProfile: 'मेरी प्रोफ़ाइल',
+    wallet: 'वॉलेट',
     logout: 'लॉगआउट',
   },
 

@@ -47,6 +47,7 @@ const RefundPolicyPage = lazyWithReload(() => import('@/pages/RefundPolicyPage')
 const RoadSmartPartnersPage = lazyWithReload(() => import('@/pages/RoadSmartPartnersPage').then(m => ({ default: m.RoadSmartPartnersPage })))
 const TrackStatusPage = lazyWithReload(() => import('@/pages/TrackStatusPage').then(m => ({ default: m.TrackStatusPage })))
 const ProfilePage = lazyWithReload(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
+const WalletPage = lazyWithReload(() => import('@/pages/WalletPage').then(m => ({ default: m.WalletPage })))
 
 function PageFallback() {
   return (
@@ -94,6 +95,7 @@ export const router = createBrowserRouter([
       { path: 'road-smart-partners', element: withSuspense(RoadSmartPartnersPage) },
       { path: 'track-status', element: withSuspense(TrackStatusPage) },
       { path: 'profile', element: withSuspense(ProfilePage) },
+      { path: 'wallet', element: withSuspense(WalletPage) },
     ],
   },
   {
