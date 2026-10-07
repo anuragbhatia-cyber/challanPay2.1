@@ -79,11 +79,6 @@ export function Footer() {
                   {SUPPORT_EMAIL}
                 </a>
               </li>
-              <li>
-                <a href="tel:+919988441033" className="inline-block py-0.5 text-sm text-gray-400 hover:text-white transition-colors">
-                  Call: +91 99884 41033
-                </a>
-              </li>
               {supportLinks.map((link) => (
                 <li key={link.href}>
                   <Link to={link.href} className="inline-block py-0.5 text-sm text-gray-400 hover:text-white transition-colors">
