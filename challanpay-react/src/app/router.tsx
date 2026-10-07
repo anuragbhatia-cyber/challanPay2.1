@@ -48,6 +48,7 @@ const RoadSmartPartnersPage = lazyWithReload(() => import('@/pages/RoadSmartPart
 const TrackStatusPage = lazyWithReload(() => import('@/pages/TrackStatusPage').then(m => ({ default: m.TrackStatusPage })))
 const ProfilePage = lazyWithReload(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const WalletPage = lazyWithReload(() => import('@/pages/WalletPage').then(m => ({ default: m.WalletPage })))
+const ChallanPayXpressPage = lazyWithReload(() => import('@/pages/ChallanPayXpressPage').then(m => ({ default: m.ChallanPayXpressPage })))
 
 function PageFallback() {
   return (
@@ -96,6 +97,7 @@ export const router = createBrowserRouter([
       { path: 'track-status', element: withSuspense(TrackStatusPage) },
       { path: 'profile', element: withSuspense(ProfilePage) },
       { path: 'wallet', element: withSuspense(WalletPage) },
+      { path: 'challanpay-xpress', element: withSuspense(ChallanPayXpressPage) },
     ],
   },
   {

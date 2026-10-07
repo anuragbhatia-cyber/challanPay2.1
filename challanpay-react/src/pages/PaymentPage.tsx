@@ -339,7 +339,7 @@ export function PaymentPage() {
                 >
                   {isFeaturedApplied ? 'Remove' : 'Apply'}
                 </button>
-                <p className="text-[10px] text-text-light whitespace-nowrap">
+                <p className="text-[10px] text-text-light text-right">
                   Valid {featuredCoupon.validFrom} – {featuredCoupon.validTo}
                 </p>
               </div>
@@ -582,7 +582,7 @@ export function PaymentPage() {
                           >
                             {isApplied ? 'Remove' : 'Apply'}
                           </button>
-                          <p className="text-[10px] text-text-light whitespace-nowrap">
+                          <p className="text-[10px] text-text-light text-right">
                             Valid {c.validFrom} – {c.validTo}
                           </p>
                         </div>
@@ -875,7 +875,7 @@ export function PaymentPage() {
         </div>
       )}
 
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-4 sm:py-6">
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 py-4 sm:py-6 overflow-x-hidden">
         {/* Mobile: Header outside grid */}
         <div className="mb-5">
           <div className="flex items-center gap-3">

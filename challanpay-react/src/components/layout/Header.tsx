@@ -28,6 +28,7 @@ export function Header() {
 
   const ALL_NAV_LINKS: Array<{ label: string; href: string; badge?: string }> = [
     { label: t.header.roadSmartPartners, href: '/road-smart-partners', badge: t.header.new },
+    { label: 'Xpress', href: '/challanpay-xpress' },
     { label: t.header.howItWorks, href: '/#how-it-works' },
     { label: t.header.support, href: '/#support' },
     { label: t.header.blogs, href: '/blogs' },
