@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { useNavigate } from 'react-router'
+import { motion } from 'framer-motion'
 import {
   Clock,
   BadgeIndianRupee,
@@ -25,9 +26,7 @@ import {
 import { PageTransition } from '@/components/shared/PageTransition'
 import { ScrollReveal } from '@/components/shared/ScrollReveal'
 import { cn } from '@/lib/utils'
-
-const WHATSAPP_URL =
-  'https://wa.me/919988441033?text=Hi%2C%20I%20need%20help%20with%20a%20court%20challan%20via%20ChallanPay%20Xpress'
+import { useUserStore } from '@/stores/userStore'
 
 interface UseCase {
   icon: React.ComponentType<{ className?: string }>
@@ -417,6 +416,34 @@ function useFaqStructuredData(faqs: Faq[]) {
 export function ChallanPayXpressPage() {
   useFaqStructuredData(FAQS)
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [vehicleInput, setVehicleInput] = useState('')
+  const [inputError, setInputError] = useState('')
+  const [shake, setShake] = useState(false)
+  const { userName, setVehicleNumber, openVerificationModal } = useUserStore()
+  const navigate = useNavigate()
+
+  const handleCheck = () => {
+    if (!vehicleInput.trim()) {
+      setInputError('Please enter a vehicle number')
+      setShake(true)
+      setTimeout(() => setShake(false), 400)
+      return
+    }
+    setInputError('')
+    const vn = vehicleInput.trim().toUpperCase()
+    setVehicleNumber(vn)
+    if (userName) {
+      navigate(`/loading?vehicle=${encodeURIComponent(vn)}`)
+    } else {
+      openVerificationModal()
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleCheck()
+    }
+  }
 
   return (
     <PageTransition>
@@ -444,24 +471,53 @@ export function ChallanPayXpressPage() {
                   <p className="font-body text-sm text-text-secondary">
                     The <em>fastest</em> way to move ahead.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                    <Link
-                      to="/#track"
+                  <div className="flex flex-col gap-3 w-full max-w-[360px]">
+                    <motion.div
+                      animate={shake ? { x: [-6, 6, -4, 4, 0] } : { x: 0 }}
+                      transition={{ duration: 0.4 }}
+                      className={cn(
+                        'flex items-center bg-white border-2 rounded-xl overflow-hidden focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(8,145,178,0.1)] transition-all w-full',
+                        inputError ? 'border-red-400' : 'border-[#E5E7EB]'
+                      )}
+                    >
+                      <div className="flex items-center px-3 py-3 border-r border-[#E5E7EB]">
+                        <img
+                          src="/images/flag.png"
+                          alt="India Flag"
+                          className="w-6 h-auto object-contain"
+                        />
+                      </div>
+                      <input
+                        id="xpress-hero-vehicle-mobile"
+                        type="text"
+                        value={vehicleInput}
+                        onChange={(e) => {
+                          setVehicleInput(e.target.value.toUpperCase())
+                          if (inputError) setInputError('')
+                        }}
+                        onKeyDown={handleKeyDown}
+                        placeholder="e.g. UP32 GJ 4083"
+                        aria-label="Vehicle number"
+                        maxLength={12}
+                        aria-invalid={inputError ? true : undefined}
+                        aria-describedby={inputError ? 'xpress-hero-vehicle-mobile-error' : undefined}
+                        className="flex-1 min-w-0 px-3 py-3 text-sm font-body font-medium text-text-primary placeholder:text-gray-500 placeholder:normal-case outline-none bg-transparent uppercase tracking-wider"
+                      />
+                    </motion.div>
+                    <button
+                      type="button"
+                      onClick={handleCheck}
                       className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-display font-semibold py-3 px-5 rounded-xl transition-colors text-sm shadow-sm"
                     >
-                      Check Your Challan
+                      Check Challans
                       <ArrowRight className="w-4 h-4" />
-                    </Link>
-                    <a
-                      href={WHATSAPP_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-text-primary font-display font-semibold py-3 px-5 rounded-xl transition-colors text-sm border border-border hover:border-primary"
-                    >
-                      <MessageCircle className="w-4 h-4 text-primary" />
-                      Talk to an Expert
-                    </a>
+                    </button>
                   </div>
+                  {inputError && (
+                    <p id="xpress-hero-vehicle-mobile-error" role="alert" className="text-xs text-red-500 font-body">
+                      {inputError}
+                    </p>
+                  )}
                 </div>
               </ScrollReveal>
             </div>
@@ -488,24 +544,53 @@ export function ChallanPayXpressPage() {
                     <p className="font-body text-base lg:text-lg text-text-secondary">
                       The <em>fastest</em> way to move ahead.
                     </p>
-                    <div className="flex flex-row gap-3">
-                      <Link
-                        to="/#track"
-                        className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-display font-semibold py-3 px-5 rounded-xl transition-colors text-sm lg:text-base shadow-sm"
+                    <div className="flex flex-col gap-3 w-full max-w-[380px]">
+                      <motion.div
+                        animate={shake ? { x: [-6, 6, -4, 4, 0] } : { x: 0 }}
+                        transition={{ duration: 0.4 }}
+                        className={cn(
+                          'flex items-center bg-white border-2 rounded-xl overflow-hidden focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(8,145,178,0.1)] transition-all w-full',
+                          inputError ? 'border-red-400' : 'border-[#E5E7EB]'
+                        )}
                       >
-                        Check Your Challan
+                        <div className="flex items-center px-3 py-3 border-r border-[#E5E7EB]">
+                          <img
+                            src="/images/flag.png"
+                            alt="India Flag"
+                            className="w-6 h-auto object-contain"
+                          />
+                        </div>
+                        <input
+                          id="xpress-hero-vehicle-desktop"
+                          type="text"
+                          value={vehicleInput}
+                          onChange={(e) => {
+                            setVehicleInput(e.target.value.toUpperCase())
+                            if (inputError) setInputError('')
+                          }}
+                          onKeyDown={handleKeyDown}
+                          placeholder="e.g. UP32 GJ 4083"
+                          aria-label="Vehicle number"
+                          maxLength={12}
+                          aria-invalid={inputError ? true : undefined}
+                          aria-describedby={inputError ? 'xpress-hero-vehicle-desktop-error' : undefined}
+                          className="flex-1 min-w-0 px-3 py-3 text-sm lg:text-base font-body font-medium text-text-primary placeholder:text-gray-500 placeholder:normal-case outline-none bg-transparent uppercase tracking-wider"
+                        />
+                      </motion.div>
+                      <button
+                        type="button"
+                        onClick={handleCheck}
+                        className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-display font-semibold py-3 px-5 rounded-xl transition-colors text-sm lg:text-base shadow-sm whitespace-nowrap"
+                      >
+                        Check Challans
                         <ArrowRight className="w-4 h-4" />
-                      </Link>
-                      <a
-                        href={WHATSAPP_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-text-primary font-display font-semibold py-3 px-5 rounded-xl transition-colors text-sm lg:text-base border border-border hover:border-primary"
-                      >
-                        <MessageCircle className="w-4 h-4 text-primary" />
-                        Talk to an Expert
-                      </a>
+                      </button>
                     </div>
+                    {inputError && (
+                      <p id="xpress-hero-vehicle-desktop-error" role="alert" className="text-xs text-red-500 font-body -mt-2">
+                        {inputError}
+                      </p>
+                    )}
                   </div>
                 </ScrollReveal>
               </div>
