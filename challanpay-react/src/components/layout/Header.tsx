@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router'
-import { Menu, X, User, ChevronDown, Calendar, LogOut, Globe, Wallet } from 'lucide-react'
+import { Menu, X, User, ChevronDown, Calendar, LogOut, Globe, Wallet, Coins } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUserStore } from '@/stores/userStore'
 import { useLanguageStore, type Language } from '@/stores/languageStore'
@@ -12,7 +12,8 @@ const LANGUAGES = [
 ]
 
 // Temporarily hide the Wallet nav entry; flip to true to restore.
-const SHOW_WALLET_NAV = false
+const SHOW_WALLET_NAV = true
+const WALLET_COIN_BALANCE = 600
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -25,6 +26,12 @@ export function Header() {
   const { t } = useTranslation()
 
   const isRSPPage = location.pathname === '/road-smart-partners'
+
+  // Inside the challan check / discovery / card / payment flow — hide marketing nav.
+  const CHALLAN_FLOW_PREFIXES = ['/loading', '/dashboard', '/status', '/challan/', '/payment']
+  const isChallanFlow = CHALLAN_FLOW_PREFIXES.some((p) =>
+    p.endsWith('/') ? location.pathname.startsWith(p) : location.pathname === p || location.pathname.startsWith(`${p}/`),
+  )
 
   const ALL_NAV_LINKS: Array<{ label: string; href: string; badge?: string }> = [
     { label: t.header.roadSmartPartners, href: '/road-smart-partners', badge: t.header.new },
@@ -40,9 +47,11 @@ export function Header() {
     { label: t.header.support, href: '/#support' },
   ]
 
-  const NAV_LINKS: Array<{ label: string; href: string; badge?: string }> = isRSPPage
-    ? RSP_NAV_LINKS
-    : ALL_NAV_LINKS
+  const NAV_LINKS: Array<{ label: string; href: string; badge?: string }> = isChallanFlow
+    ? []
+    : isRSPPage
+      ? RSP_NAV_LINKS
+      : ALL_NAV_LINKS
 
   const toggleLanguage = () => {
     setLanguage(language === 'en' ? 'hi' : 'en')
@@ -135,7 +144,7 @@ export function Header() {
             <div className="relative">
               <button
                 onClick={() => { setIsLangOpen(!isLangOpen); setIsProfileOpen(false) }}
-                className="flex items-center gap-1.5 px-3 min-h-11 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors text-sm font-medium text-text-secondary"
+                className="flex items-center gap-1.5 px-4 h-12 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors text-sm font-medium text-text-secondary"
                 aria-label="Switch language"
               >
                 <Globe className="w-4 h-4" />
@@ -165,6 +174,22 @@ export function Header() {
             </div>
           )}
 
+          {/* Wallet pill — logged-in only, hidden on RSP page */}
+          {!isRSPPage && SHOW_WALLET_NAV && userName && (
+            <Link
+              to="/wallet"
+              aria-label={`Wallet: ${WALLET_COIN_BALANCE} coins`}
+              className="flex items-center gap-2 pl-1.5 pr-4 h-12 rounded-full border border-gray-200 bg-white hover:bg-gray-50 hover:shadow-sm transition-all text-sm font-semibold text-text-primary"
+            >
+              <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-yellow-100">
+                <Coins className="w-4 h-4 text-yellow-600" strokeWidth={2.25} />
+              </span>
+              <span>
+                Wallet: <span className="tabular-nums">{WALLET_COIN_BALANCE}</span>
+              </span>
+            </Link>
+          )}
+
           {/* User Profile — hidden on RSP page */}
           {!isRSPPage && (
           <div className="relative">
@@ -179,10 +204,10 @@ export function Header() {
                 setIsProfileOpen(!isProfileOpen)
               }
             }}
-            className="flex items-center gap-3 pl-2 pr-4 py-2 min-h-11 rounded-full border border-gray-200 bg-gradient-to-br from-gray-50 to-white hover:from-gray-100 hover:to-gray-50 hover:shadow-sm transition-all"
+            className="flex items-center gap-2 pl-1.5 pr-4 h-12 rounded-full border border-gray-200 bg-gradient-to-br from-gray-50 to-white hover:from-gray-100 hover:to-gray-50 hover:shadow-sm transition-all"
           >
-            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-              <User className="w-5 h-5 text-gray-600" />
+            <div className="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
+              <User className="w-4 h-4 text-gray-600" />
             </div>
             <span className="text-[15px] font-semibold text-gray-900 max-w-[150px] truncate">
               {userName || t.header.login}
