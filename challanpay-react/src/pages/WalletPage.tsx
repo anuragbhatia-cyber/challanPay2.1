@@ -1,5 +1,15 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ArrowLeft, Coins, Clock, Hourglass, AlertTriangle } from 'lucide-react'
+import {
+  ArrowLeft,
+  Coins,
+  Clock,
+  Hourglass,
+  AlertTriangle,
+  Undo2,
+  Landmark,
+  ExternalLink,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/shared/PageTransition'
 
@@ -20,6 +30,21 @@ type HistoryItem = {
   date: string
   description: string
   amount: number
+}
+
+type RefundStatus = 'in_progress' | 'delayed' | 'on_hold' | 'refunded' | 'not_approved'
+
+type Refund = {
+  id: string
+  incidentId: string
+  amount: number
+  destination: string
+  expectedDate: string
+  status: RefundStatus
+  refundTxnId?: string
+  completedOn?: string
+  reason?: string
+  isReferralBalance?: boolean
 }
 
 const AVAILABLE_COINS = 600
@@ -46,8 +71,15 @@ const BATCHES: Batch[] = [
   },
   {
     id: 'b3',
-    source: 'Coupon converted to credit',
-    coinsLeft: 100,
+    source: 'Reward for order 10478',
+    coinsLeft: 50,
+    received: '14 Sep',
+    expires: '14 Oct',
+  },
+  {
+    id: 'b4',
+    source: 'Coupon WELCOME100 converted to credit',
+    coinsLeft: 50,
     received: '15 Sep',
     expires: '15 Oct',
   },
@@ -55,13 +87,58 @@ const BATCHES: Batch[] = [
 
 const HISTORY: HistoryItem[] = [
   { id: 'h1', date: '20 Sep', description: 'First-time check credit received', amount: 200 },
-  { id: 'h2', date: '18 Sep', description: 'Used on order 10482', amount: -200 },
-  { id: 'h3', date: '18 Sep', description: 'Returned after failed payment, order 10481', amount: 200 },
+  { id: 'h2', date: '18 Sep', description: 'Used on incident 10482', amount: -200 },
+  { id: 'h3', date: '18 Sep', description: 'Returned after failed payment, incident 10481', amount: 200 },
   { id: 'h4', date: '15 Sep', description: 'Coupon WELCOME100 converted to credit', amount: 100 },
+  { id: 'h5', date: '14 Sep', description: 'Reward for order 10478', amount: 50 },
 ]
+
+const REFUNDS: Refund[] = [
+  {
+    id: 'r1',
+    incidentId: '10490',
+    amount: 1250,
+    destination: 'HDFC Bank account •••• 4123',
+    expectedDate: 'by 26 Sep',
+    status: 'in_progress',
+  },
+  {
+    id: 'r2',
+    incidentId: '10476',
+    amount: 500,
+    destination: 'HDFC Bank account •••• 4123',
+    expectedDate: 'by 18 Sep',
+    status: 'delayed',
+    reason: 'Taking longer than expected. Our team is following up with the bank.',
+  },
+  {
+    id: 'r3',
+    incidentId: '10471',
+    amount: 850,
+    destination: 'UPI anurag@okhdfcbank',
+    expectedDate: 'by 15 Sep',
+    status: 'on_hold',
+    reason: 'Being checked by our team.',
+    isReferralBalance: true,
+  },
+  {
+    id: 'r4',
+    incidentId: '10462',
+    amount: 2300,
+    destination: 'HDFC Bank account •••• 4123',
+    expectedDate: 'by 09 Sep',
+    status: 'refunded',
+    completedOn: '08 Sep',
+    refundTxnId: 'RZPY-REF-9F2A17C',
+  },
+]
+
+type WalletTab = 'credits' | 'refunds'
 
 export function WalletPage() {
   const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState<WalletTab>('credits')
+  const activeRefundCount = REFUNDS.filter((r) => r.status !== 'refunded').length
 
   return (
     <PageTransition>
@@ -113,73 +190,131 @@ export function WalletPage() {
           />
         </div>
 
-        {/* Your credit by batch */}
-        <section className="mt-6 rounded-2xl border border-border/60 bg-white overflow-hidden">
-          <div className="px-4 sm:px-5 pt-5 pb-3">
-            <h2 className="font-display font-bold text-base text-text-primary">
-              Your credits
-            </h2>
-          </div>
+        {/* Tabs */}
+        <div
+          role="tablist"
+          aria-label="Wallet sections"
+          className="mt-6 inline-flex items-center gap-1 p-1 rounded-full border border-border/60 bg-gray-50"
+        >
+          <TabButton
+            label="Credits"
+            active={activeTab === 'credits'}
+            onClick={() => setActiveTab('credits')}
+          />
+          <TabButton
+            label="Refunds"
+            count={activeRefundCount}
+            active={activeTab === 'refunds'}
+            onClick={() => setActiveTab('refunds')}
+          />
+        </div>
 
-          {/* Desktop table */}
-          <ul className="divide-y divide-border/50 border-t border-border/50">
-            {BATCHES.map((b) => (
-              <li
-                key={b.id}
-                className="flex items-center gap-4 px-4 sm:px-5 py-3.5 text-sm"
-              >
-                <span className="w-14 sm:w-16 flex-shrink-0 text-xs sm:text-sm text-text-light tabular-nums">
-                  {b.received}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="font-display text-text-primary truncate">{b.source}</p>
-                  <p className="text-[11px] text-text-light mt-0.5 flex items-center gap-2 flex-wrap">
-                    <span className="tabular-nums">Expires {b.expires}</span>
-                    {b.expiryTag && (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
-                        {b.expiryTag}
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <span className="inline-flex items-center gap-1.5 font-display font-bold text-sm text-text-primary whitespace-nowrap">
-                  <Coins className="w-4 h-4 text-yellow-600" strokeWidth={2.25} aria-hidden />
-                  <span className="tabular-nums">{b.coinsLeft}</span> coins
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {activeTab === 'credits' && (
+          <>
+            {/* Expiry reminder */}
+            {EXPIRING_SOON_COINS > 0 && (
+              <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 px-4 sm:px-5 py-3.5">
+                <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-amber-900 leading-relaxed">
+                  <span className="font-display font-bold">{EXPIRING_SOON_COINS} coins</span>{' '}
+                  expire within 7 days. Credits expiring soonest are used first at checkout.
+                </p>
+              </div>
+            )}
 
-        {/* History */}
-        <section className="mt-6 rounded-2xl border border-border/60 bg-white overflow-hidden">
-          <div className="px-4 sm:px-5 pt-5 pb-3">
-            <h2 className="font-display font-bold text-base text-text-primary">History</h2>
-          </div>
-          <ul className="divide-y divide-border/50">
-            {HISTORY.map((h) => (
-              <li
-                key={h.id}
-                className="flex items-center gap-4 px-4 sm:px-5 py-3.5"
-              >
-                <span className="w-14 sm:w-16 flex-shrink-0 text-xs sm:text-sm text-text-light tabular-nums">
-                  {h.date}
-                </span>
-                <span className="flex-1 min-w-0 text-sm text-text-primary truncate">
-                  {h.description}
-                </span>
-                <span
-                  className={cn(
-                    'font-display font-bold text-sm tabular-nums whitespace-nowrap',
-                    h.amount >= 0 ? 'text-emerald-600' : 'text-rose-600',
-                  )}
-                >
-                  {h.amount >= 0 ? '+' : '−'}{Math.abs(h.amount)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
+            {/* Your credit by batch */}
+            <section className="mt-4 rounded-2xl border border-border/60 bg-white overflow-hidden">
+              <div className="px-4 sm:px-5 pt-5 pb-3">
+                <h2 className="font-display font-bold text-base text-text-primary">
+                  Your credits
+                </h2>
+              </div>
+
+              <ul className="divide-y divide-border/50 border-t border-border/50">
+                {BATCHES.map((b) => (
+                  <li
+                    key={b.id}
+                    className="flex items-center gap-4 px-4 sm:px-5 py-3.5 text-sm"
+                  >
+                    <span className="w-14 sm:w-16 flex-shrink-0 text-xs sm:text-sm text-text-light tabular-nums">
+                      {b.received}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display text-text-primary truncate">{b.source}</p>
+                      <p className="text-[11px] text-text-light mt-0.5 flex items-center gap-2 flex-wrap">
+                        <span className="tabular-nums">Expires {b.expires}</span>
+                        {b.expiryTag && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
+                            {b.expiryTag}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 font-display font-bold text-sm text-text-primary whitespace-nowrap">
+                      <Coins className="w-4 h-4 text-yellow-600" strokeWidth={2.25} aria-hidden />
+                      <span className="tabular-nums">{b.coinsLeft}</span> coins
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+
+            {/* Coin activity */}
+            <section className="mt-6 rounded-2xl border border-border/60 bg-white overflow-hidden">
+              <div className="px-4 sm:px-5 pt-5 pb-3">
+                <h2 className="font-display font-bold text-base text-text-primary">
+                  Coin activity
+                </h2>
+              </div>
+              <ul className="divide-y divide-border/50">
+                {HISTORY.map((h) => (
+                  <li
+                    key={h.id}
+                    className="flex items-center gap-4 px-4 sm:px-5 py-3.5"
+                  >
+                    <span className="w-14 sm:w-16 flex-shrink-0 text-xs sm:text-sm text-text-light tabular-nums">
+                      {h.date}
+                    </span>
+                    <span className="flex-1 min-w-0 text-sm text-text-primary truncate">
+                      {h.description}
+                    </span>
+                    <span
+                      className={cn(
+                        'font-display font-bold text-sm tabular-nums whitespace-nowrap',
+                        h.amount >= 0 ? 'text-emerald-600' : 'text-rose-600',
+                      )}
+                    >
+                      {h.amount >= 0 ? '+' : '−'}{Math.abs(h.amount)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </>
+        )}
+
+        {activeTab === 'refunds' && (
+          <section className="mt-4 rounded-2xl border border-sky-200/70 bg-sky-50/30 overflow-hidden">
+            <div className="px-4 sm:px-5 pt-5 pb-2">
+              <div className="flex items-center gap-2">
+                <Undo2 className="w-4 h-4 text-sky-700" />
+                <h2 className="font-display font-bold text-base text-text-primary">
+                  Refunds
+                </h2>
+              </div>
+              <p className="text-xs text-text-light mt-1">
+                Refunds go back to your original payment method. They are not coins and
+                can't be used at checkout.
+              </p>
+            </div>
+
+            <ul className="mt-2 divide-y divide-sky-200/60 border-t border-sky-200/60">
+              {REFUNDS.map((r) => (
+                <RefundRow key={r.id} refund={r} />
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Footer note */}
         <p className="mt-4 mb-10 text-xs text-text-light leading-relaxed">
@@ -193,6 +328,43 @@ export function WalletPage() {
         </p>
       </div>
     </PageTransition>
+  )
+}
+
+type TabButtonProps = {
+  label: string
+  active: boolean
+  onClick: () => void
+  count?: number
+}
+
+function TabButton({ label, active, onClick, count }: TabButtonProps) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      onClick={onClick}
+      aria-selected={active}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        'flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        active
+          ? 'bg-white text-text-primary shadow-sm ring-1 ring-border/60'
+          : 'text-text-light hover:text-text-primary hover:bg-white/60',
+      )}
+    >
+      <span>{label}</span>
+      {typeof count === 'number' && count > 0 && (
+        <span
+          className={cn(
+            'text-[11px] font-bold px-1.5 py-0.5 rounded-full tabular-nums min-w-[22px] text-center',
+            active ? 'bg-primary text-white' : 'bg-gray-200 text-text-secondary',
+          )}
+        >
+          {count}
+        </span>
+      )}
+    </button>
   )
 }
 
@@ -224,5 +396,100 @@ function StatTile({ label, value, icon, emphasize = false }: StatTileProps) {
         {value}
       </p>
     </div>
+  )
+}
+
+const STATUS_META: Record<
+  RefundStatus,
+  { label: string; chip: string; needsSupport: boolean }
+> = {
+  in_progress: {
+    label: 'In progress',
+    chip: 'bg-sky-100 text-sky-800',
+    needsSupport: false,
+  },
+  delayed: {
+    label: 'Delayed',
+    chip: 'bg-amber-100 text-amber-800',
+    needsSupport: true,
+  },
+  on_hold: {
+    label: 'On hold',
+    chip: 'bg-amber-100 text-amber-900',
+    needsSupport: true,
+  },
+  refunded: {
+    label: 'Refunded',
+    chip: 'bg-emerald-100 text-emerald-800',
+    needsSupport: false,
+  },
+  not_approved: {
+    label: 'Not approved',
+    chip: 'bg-rose-100 text-rose-800',
+    needsSupport: true,
+  },
+}
+
+function RefundRow({ refund }: { refund: Refund }) {
+  const meta = STATUS_META[refund.status]
+  const isDone = refund.status === 'refunded'
+
+  return (
+    <li className="px-4 sm:px-5 py-4 bg-white/60">
+      <div className="flex items-start gap-4">
+        <span className="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-full bg-sky-100 flex-shrink-0 mt-0.5">
+          <Landmark className="w-4 h-4 text-sky-700" />
+        </span>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={cn(
+                'text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap',
+                meta.chip,
+              )}
+            >
+              {meta.label}
+            </span>
+            {refund.isReferralBalance && (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 whitespace-nowrap">
+                Referral balance refund
+              </span>
+            )}
+            <span className="text-[11px] text-text-light">
+              Incident {refund.incidentId}
+            </span>
+          </div>
+
+          <p className="font-display text-text-primary mt-1.5 text-sm">
+            ₹{formatINR(refund.amount)} to {refund.destination}
+          </p>
+
+          <p className="text-[12px] text-text-light mt-0.5">
+            {isDone
+              ? `Refunded on ${refund.completedOn} · Txn ${refund.refundTxnId}`
+              : `Expected ${refund.expectedDate}`}
+          </p>
+
+          {refund.reason && !isDone && (
+            <p className="text-[12px] text-text-secondary mt-1.5">{refund.reason}</p>
+          )}
+
+          {meta.needsSupport && (
+            <a
+              href="/#support"
+              className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-sky-700 hover:text-sky-900"
+            >
+              Contact support
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+        </div>
+
+        <span className="font-display font-bold text-sm text-text-primary tabular-nums whitespace-nowrap">
+          ₹{formatINR(refund.amount)}
+        </span>
+      </div>
+    </li>
   )
 }
