@@ -26,7 +26,7 @@ const CREDIT_EXPIRING_COINS = 300
 const CREDIT_EXPIRY_LABEL = '27 Sep'
 const CREDIT_CAP_PCT = 0.10
 // Temporarily hide the ChallanPay Credit block; flip to true to restore.
-const SHOW_CREDIT_CARD = false
+const SHOW_CREDIT_CARD = true
 
 type Coupon = {
   id: string
@@ -211,19 +211,28 @@ export function PaymentPage() {
 
   const prefersReducedMotion = useReducedMotion()
 
+  const burstConfetti = () => {
+    if (prefersReducedMotion) return
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+    })
+  }
+
   const handlePledge = () => {
     const next = !pledgeChecked
     setPledgeChecked(next)
     if (next) {
-      if (!prefersReducedMotion) {
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-        })
-      }
+      burstConfetti()
       toast.success('Congratulations! Reward applied 🎉')
     }
+  }
+
+  const applyCoupon = (c: Coupon) => {
+    setAppliedCouponId(c.id)
+    burstConfetti()
+    toast.success(`Coupon ${c.code} applied 🎉`)
   }
 
   const pledgeCard = !isPremium ? (
@@ -324,8 +333,7 @@ export function PaymentPage() {
                       setAppliedCouponId(null)
                       toast.success('Coupon removed')
                     } else {
-                      setAppliedCouponId(featuredCoupon.id)
-                      toast.success(`Coupon ${featuredCoupon.code} applied 🎉`)
+                      applyCoupon(featuredCoupon)
                     }
                   }}
                   className={cn(
@@ -566,8 +574,7 @@ export function PaymentPage() {
                                 setAppliedCouponId(null)
                                 toast.success('Coupon removed')
                               } else {
-                                setAppliedCouponId(c.id)
-                                toast.success(`Coupon ${c.code} applied 🎉`)
+                                applyCoupon(c)
                                 setShowCouponSheet(false)
                               }
                             }}
@@ -1167,7 +1174,7 @@ export function PaymentPage() {
                   const hiddenOnlineCount = onlineList.length - ONLINE_INITIAL_VISIBLE
                   const onlineTotal = displaySummary.onlineAmount + displaySummary.onlineFee
                   const onlineSection = onlineList.length > 0 && (
-                    <section key="online" className="bg-gray-50/70 rounded-2xl border border-border/40 p-4 sm:p-5">
+                    <section key="online" className="bg-white rounded-2xl border border-border/60 p-4 sm:p-5">
                       {renderSectionHeader(
                         t.payment.onlineChallans,
                         onlineList.length,
@@ -1220,7 +1227,7 @@ export function PaymentPage() {
                       return next
                     })
                   const courtSection = courtList.length > 0 && (
-                    <section key="court" className="bg-gray-50/70 rounded-2xl border border-border/40 p-4 sm:p-5">
+                    <section key="court" className="bg-white rounded-2xl border border-border/60 p-4 sm:p-5">
                       <div className="flex items-baseline justify-between gap-3 mb-2.5">
                         <div className="flex items-baseline gap-2.5">
                           <h4 className="font-display font-bold text-base sm:text-lg text-rose-800">
