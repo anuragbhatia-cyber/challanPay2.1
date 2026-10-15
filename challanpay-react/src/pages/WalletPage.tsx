@@ -3,33 +3,20 @@ import { useNavigate } from 'react-router'
 import {
   ArrowLeft,
   Coins,
-  Clock,
-  Hourglass,
   AlertTriangle,
-  Undo2,
-  Landmark,
-  ExternalLink,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/shared/PageTransition'
 
 const formatINR = (n: number) => n.toLocaleString('en-IN')
 
-type Batch = {
-  id: string
-  source: string
-  coinsLeft: number
-  received: string
-  expires: string
-  expiringSoon?: boolean
-  expiryTag?: string
-}
-
-type HistoryItem = {
+type LedgerEntry = {
   id: string
   date: string
   description: string
   amount: number
+  expires?: string
+  expiryTag?: string
 }
 
 type RefundStatus = 'in_progress' | 'delayed' | 'on_hold' | 'refunded' | 'not_approved'
@@ -43,54 +30,54 @@ type Refund = {
   status: RefundStatus
   refundTxnId?: string
   completedOn?: string
-  reason?: string
   isReferralBalance?: boolean
 }
 
 const AVAILABLE_COINS = 600
-const RESERVED_COINS = 0
-const PENDING_COINS = 0
 const EXPIRING_SOON_COINS = 300
 
-const BATCHES: Batch[] = [
+const LEDGER: LedgerEntry[] = [
   {
-    id: 'b1',
-    source: 'Employee benefit',
-    coinsLeft: 300,
-    received: '12 Sep',
-    expires: '27 Sep',
-    expiringSoon: true,
-    expiryTag: 'Expires in 7 days',
-  },
-  {
-    id: 'b2',
-    source: 'First-time check credit',
-    coinsLeft: 200,
-    received: '20 Sep',
+    id: 'l1',
+    date: '20 Sep',
+    description: 'First-time check credit received',
+    amount: 200,
     expires: '19 Nov',
   },
   {
-    id: 'b3',
-    source: 'Reward for order 10478',
-    coinsLeft: 50,
-    received: '14 Sep',
+    id: 'l2',
+    date: '18 Sep',
+    description: 'Returned after failed payment, incident 10481',
+    amount: 200,
+  },
+  {
+    id: 'l3',
+    date: '18 Sep',
+    description: 'Used on incident 10482',
+    amount: -200,
+  },
+  {
+    id: 'l4',
+    date: '15 Sep',
+    description: 'Coupon WELCOME100 converted to credit',
+    amount: 100,
+    expires: '15 Oct',
+  },
+  {
+    id: 'l5',
+    date: '14 Sep',
+    description: 'Reward for order 10478',
+    amount: 50,
     expires: '14 Oct',
   },
   {
-    id: 'b4',
-    source: 'Coupon WELCOME100 converted to credit',
-    coinsLeft: 50,
-    received: '15 Sep',
-    expires: '15 Oct',
+    id: 'l6',
+    date: '12 Sep',
+    description: 'Employee benefit',
+    amount: 300,
+    expires: '27 Sep',
+    expiryTag: 'Expires in 7 days',
   },
-]
-
-const HISTORY: HistoryItem[] = [
-  { id: 'h1', date: '20 Sep', description: 'First-time check credit received', amount: 200 },
-  { id: 'h2', date: '18 Sep', description: 'Used on incident 10482', amount: -200 },
-  { id: 'h3', date: '18 Sep', description: 'Returned after failed payment, incident 10481', amount: 200 },
-  { id: 'h4', date: '15 Sep', description: 'Coupon WELCOME100 converted to credit', amount: 100 },
-  { id: 'h5', date: '14 Sep', description: 'Reward for order 10478', amount: 50 },
 ]
 
 const REFUNDS: Refund[] = [
@@ -109,7 +96,6 @@ const REFUNDS: Refund[] = [
     destination: 'HDFC Bank account •••• 4123',
     expectedDate: 'by 18 Sep',
     status: 'delayed',
-    reason: 'Taking longer than expected. Our team is following up with the bank.',
   },
   {
     id: 'r3',
@@ -118,7 +104,6 @@ const REFUNDS: Refund[] = [
     destination: 'UPI anurag@okhdfcbank',
     expectedDate: 'by 15 Sep',
     status: 'on_hold',
-    reason: 'Being checked by our team.',
     isReferralBalance: true,
   },
   {
@@ -158,7 +143,7 @@ export function WalletPage() {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-3 sm:gap-4">
           <div className="rounded-2xl border border-border/60 bg-white p-5 sm:p-6">
             <p className="text-xs sm:text-sm text-text-light mb-2">Available credit</p>
             <div className="flex items-baseline gap-3 flex-wrap">
@@ -168,20 +153,9 @@ export function WalletPage() {
               <span className="font-display text-3xl sm:text-4xl font-bold text-text-primary tabular-nums">
                 {AVAILABLE_COINS} coins
               </span>
-              <span className="text-sm text-text-light">(₹{formatINR(AVAILABLE_COINS)})</span>
             </div>
           </div>
 
-          <StatTile
-            label="Reserved"
-            value={RESERVED_COINS}
-            icon={<Hourglass className="w-4 h-4 text-text-light" />}
-          />
-          <StatTile
-            label="Pending"
-            value={PENDING_COINS}
-            icon={<Clock className="w-4 h-4 text-text-light" />}
-          />
           <StatTile
             label="Expiring soon"
             value={EXPIRING_SOON_COINS}
@@ -197,7 +171,7 @@ export function WalletPage() {
           className="mt-6 inline-flex items-center gap-1 p-1 rounded-full border border-border/60 bg-gray-50"
         >
           <TabButton
-            label="Credits"
+            label="Activity"
             active={activeTab === 'credits'}
             onClick={() => setActiveTab('credits')}
           />
@@ -222,69 +196,42 @@ export function WalletPage() {
               </div>
             )}
 
-            {/* Your credit by batch */}
+            {/* Credit ledger */}
             <section className="mt-4 rounded-2xl border border-border/60 bg-white overflow-hidden">
-              <div className="px-4 sm:px-5 pt-5 pb-3">
-                <h2 className="font-display font-bold text-base text-text-primary">
-                  Your credits
-                </h2>
-              </div>
-
-              <ul className="divide-y divide-border/50 border-t border-border/50">
-                {BATCHES.map((b) => (
-                  <li
-                    key={b.id}
-                    className="flex items-center gap-4 px-4 sm:px-5 py-3.5 text-sm"
-                  >
-                    <span className="w-14 sm:w-16 flex-shrink-0 text-xs sm:text-sm text-text-light tabular-nums">
-                      {b.received}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-display text-text-primary truncate">{b.source}</p>
-                      <p className="text-[11px] text-text-light mt-0.5 flex items-center gap-2 flex-wrap">
-                        <span className="tabular-nums">Expires {b.expires}</span>
-                        {b.expiryTag && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
-                            {b.expiryTag}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <span className="inline-flex items-center gap-1.5 font-display font-bold text-sm text-text-primary whitespace-nowrap">
-                      <Coins className="w-4 h-4 text-yellow-600" strokeWidth={2.25} aria-hidden />
-                      <span className="tabular-nums">{b.coinsLeft}</span> coins
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Coin activity */}
-            <section className="mt-6 rounded-2xl border border-border/60 bg-white overflow-hidden">
               <div className="px-4 sm:px-5 pt-5 pb-3">
                 <h2 className="font-display font-bold text-base text-text-primary">
                   Coin activity
                 </h2>
               </div>
-              <ul className="divide-y divide-border/50">
-                {HISTORY.map((h) => (
+              <ul className="divide-y divide-border/50 border-t border-border/50">
+                {LEDGER.map((e) => (
                   <li
-                    key={h.id}
-                    className="flex items-center gap-4 px-4 sm:px-5 py-3.5"
+                    key={e.id}
+                    className="flex items-center gap-4 px-4 sm:px-5 py-3.5 text-sm"
                   >
                     <span className="w-14 sm:w-16 flex-shrink-0 text-xs sm:text-sm text-text-light tabular-nums">
-                      {h.date}
+                      {e.date}
                     </span>
-                    <span className="flex-1 min-w-0 text-sm text-text-primary truncate">
-                      {h.description}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-text-primary truncate">{e.description}</p>
+                      {e.expires && (
+                        <p className="text-[11px] text-text-light mt-0.5 flex items-center gap-2 flex-wrap">
+                          <span className="tabular-nums">Expires {e.expires}</span>
+                          {e.expiryTag && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 whitespace-nowrap">
+                              {e.expiryTag}
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </div>
                     <span
                       className={cn(
                         'font-display font-bold text-sm tabular-nums whitespace-nowrap',
-                        h.amount >= 0 ? 'text-emerald-600' : 'text-rose-600',
+                        e.amount >= 0 ? 'text-emerald-600' : 'text-rose-600',
                       )}
                     >
-                      {h.amount >= 0 ? '+' : '−'}{Math.abs(h.amount)}
+                      {e.amount >= 0 ? '+' : '−'}{Math.abs(e.amount)}
                     </span>
                   </li>
                 ))}
@@ -295,20 +242,7 @@ export function WalletPage() {
 
         {activeTab === 'refunds' && (
           <section className="mt-4 rounded-2xl border border-sky-200/70 bg-sky-50/30 overflow-hidden">
-            <div className="px-4 sm:px-5 pt-5 pb-2">
-              <div className="flex items-center gap-2">
-                <Undo2 className="w-4 h-4 text-sky-700" />
-                <h2 className="font-display font-bold text-base text-text-primary">
-                  Refunds
-                </h2>
-              </div>
-              <p className="text-xs text-text-light mt-1">
-                Refunds go back to your original payment method. They are not coins and
-                can't be used at checkout.
-              </p>
-            </div>
-
-            <ul className="mt-2 divide-y divide-sky-200/60 border-t border-sky-200/60">
+            <ul className="divide-y divide-sky-200/60">
               {REFUNDS.map((r) => (
                 <RefundRow key={r.id} refund={r} />
               ))}
@@ -399,34 +333,26 @@ function StatTile({ label, value, icon, emphasize = false }: StatTileProps) {
   )
 }
 
-const STATUS_META: Record<
-  RefundStatus,
-  { label: string; chip: string; needsSupport: boolean }
-> = {
+const STATUS_META: Record<RefundStatus, { label: string; chip: string }> = {
   in_progress: {
     label: 'In progress',
     chip: 'bg-sky-100 text-sky-800',
-    needsSupport: false,
   },
   delayed: {
     label: 'Delayed',
     chip: 'bg-amber-100 text-amber-800',
-    needsSupport: true,
   },
   on_hold: {
     label: 'On hold',
     chip: 'bg-amber-100 text-amber-900',
-    needsSupport: true,
   },
   refunded: {
     label: 'Refunded',
     chip: 'bg-emerald-100 text-emerald-800',
-    needsSupport: false,
   },
   not_approved: {
     label: 'Not approved',
     chip: 'bg-rose-100 text-rose-800',
-    needsSupport: true,
   },
 }
 
@@ -437,10 +363,6 @@ function RefundRow({ refund }: { refund: Refund }) {
   return (
     <li className="px-4 sm:px-5 py-4 bg-white/60">
       <div className="flex items-start gap-4">
-        <span className="hidden sm:inline-flex items-center justify-center w-9 h-9 rounded-full bg-sky-100 flex-shrink-0 mt-0.5">
-          <Landmark className="w-4 h-4 text-sky-700" />
-        </span>
-
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span
@@ -456,9 +378,6 @@ function RefundRow({ refund }: { refund: Refund }) {
                 Referral balance refund
               </span>
             )}
-            <span className="text-[11px] text-text-light">
-              Incident {refund.incidentId}
-            </span>
           </div>
 
           <p className="font-display text-text-primary mt-1.5 text-sm">
@@ -470,20 +389,6 @@ function RefundRow({ refund }: { refund: Refund }) {
               ? `Refunded on ${refund.completedOn} · Txn ${refund.refundTxnId}`
               : `Expected ${refund.expectedDate}`}
           </p>
-
-          {refund.reason && !isDone && (
-            <p className="text-[12px] text-text-secondary mt-1.5">{refund.reason}</p>
-          )}
-
-          {meta.needsSupport && (
-            <a
-              href="/#support"
-              className="mt-2 inline-flex items-center gap-1 text-[12px] font-semibold text-sky-700 hover:text-sky-900"
-            >
-              Contact support
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          )}
         </div>
 
         <span className="font-display font-bold text-sm text-text-primary tabular-nums whitespace-nowrap">
