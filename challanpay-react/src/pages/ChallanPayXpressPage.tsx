@@ -22,6 +22,13 @@ import {
   ChevronRight,
   Quote,
   Star,
+  AlertTriangle,
+  RefreshCw,
+  User,
+  Plus,
+  Minus,
+  Search,
+  ArrowRightLeft,
 } from 'lucide-react'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { ScrollReveal } from '@/components/shared/ScrollReveal'
@@ -37,57 +44,57 @@ interface UseCase {
 const WHO_IS_IT_FOR: UseCase[] = [
   {
     icon: Scale,
-    title: 'Court challan pending',
+    title: 'Pending court challan',
     description:
-      'A traffic challan sent to court is holding up your paperwork or peace of mind.',
+      'A court-pending traffic challan is delaying your paperwork or causing unnecessary stress.',
   },
   {
     icon: Car,
-    title: 'Vehicle sale coming up',
+    title: 'Planning to Sell Your Vehicle',
     description:
-      'You have a buyer lined up and need the challan cleared before the handover.',
+      'You have a buyer ready and need the challan resolved before transferring ownership.',
   },
   {
     icon: FileText,
-    title: 'RC transfer pending',
+    title: 'RC Transfer Delayed',
     description:
-      'An unresolved court challan is blocking the Registration Certificate transfer.',
+      'An unresolved court challan is holding up your Registration Certificate transfer.',
   },
   {
     icon: ShieldAlert,
-    title: 'Insurance renewal approaching',
+    title: 'Insurance Renewal Due Soon',
     description:
-      'Your renewal date is near and a pending court challan is standing in the way.',
+      'Your renewal date is approaching, and a pending court challan may delay the process.',
   },
   {
     icon: CalendarClock,
-    title: 'Fitness certificate renewal',
+    title: 'Fitness Certificate Renewal',
     description:
-      'Fitness renewal requires a clean record — Xpress helps clear eligible challans in time.',
+      'Your fitness renewal is due, and Xpress helps resolve eligible challans on time.',
   },
   {
     icon: Wrench,
-    title: 'Loan or vehicle documentation',
+    title: 'Loan or Vehicle Paperwork',
     description:
-      'A lender or buyer needs documents that depend on no pending court challan.',
+      'A lender or buyer needs documents cleared of pending court challans.',
   },
   {
     icon: Truck,
-    title: 'Commercial vehicle compliance',
+    title: 'Commercial Vehicle Compliance',
     description:
-      'Fleet owners and operators needing fast resolution on commercial court challans.',
+      'Fleet owners and operators seeking timely resolution of commercial court challans.',
   },
   {
     icon: MapPin,
-    title: 'Challan from another city or state',
+    title: 'Out-of-State or City Challan',
     description:
-      "You can't travel to the issuing jurisdiction and need remote resolution.",
+      "You can't visit the issuing jurisdiction and need convenient remote assistance.",
   },
   {
     icon: Layers,
-    title: 'Multiple pending challans',
+    title: 'Multiple Outstanding Challans',
     description:
-      'More than one court challan on the same vehicle — handled together where eligible.',
+      'Several court challans for one vehicle can be managed together, subject to eligibility.',
   },
 ]
 
@@ -97,6 +104,10 @@ interface UseCaseTopic {
   intro: string
   keywords: string[]
   image: string
+  badge: {
+    icon: React.ComponentType<{ className?: string }>
+    label: string
+  }
 }
 
 const USE_CASE_TOPICS: UseCaseTopic[] = [
@@ -110,9 +121,9 @@ const USE_CASE_TOPICS: UseCaseTopic[] = [
       'Court challan payment',
       'Pending court challan',
       'How to clear court challan',
-      'Traffic challan sent to court',
     ],
     image: '/images/blog-heading.webp',
+    badge: { icon: Scale, label: 'Court Resolution' },
   },
   {
     anchor: 'challan-before-vehicle-sale',
@@ -126,6 +137,7 @@ const USE_CASE_TOPICS: UseCaseTopic[] = [
       'Vehicle sale with pending challan',
     ],
     image: '/images/BLACK-CAR.png',
+    badge: { icon: ShieldCheck, label: 'Safe Vehicle Sale' },
   },
   {
     anchor: 'challan-rc-transfer',
@@ -136,8 +148,10 @@ const USE_CASE_TOPICS: UseCaseTopic[] = [
       'Challan pending for RC transfer',
       'RC transfer with pending challan',
       'Clear challan before RC transfer',
+      'RC transfer paperwork',
     ],
     image: '/images/CarInfo.png',
+    badge: { icon: FileText, label: 'RC Transfer' },
   },
   {
     anchor: 'challan-insurance-renewal',
@@ -148,8 +162,10 @@ const USE_CASE_TOPICS: UseCaseTopic[] = [
       'Pending challan insurance renewal',
       'Traffic challan before insurance renewal',
       'Clear vehicle challan before insurance',
+      'Insurance renewal with challan',
     ],
     image: '/images/Blogs-img.png',
+    badge: { icon: ShieldAlert, label: 'Insurance Renewal' },
   },
   {
     anchor: 'commercial-fleet',
@@ -160,12 +176,30 @@ const USE_CASE_TOPICS: UseCaseTopic[] = [
       'Commercial vehicle challan',
       'Truck challan resolution',
       'Fleet challan management',
-      'Pending challan for commercial vehicles',
       'Court challan for commercial vehicles',
     ],
     image: '/images/91Trucks.png',
+    badge: { icon: Truck, label: 'Fleet Compliance' },
   },
 ]
+
+const KEYWORD_TILES: Array<{
+  icon: React.ComponentType<{ className?: string }>
+  bg: string
+  text: string
+}> = [
+  { icon: Search, bg: 'bg-sky-100', text: 'text-sky-600' },
+  { icon: FileText, bg: 'bg-amber-100', text: 'text-amber-600' },
+  { icon: ArrowRightLeft, bg: 'bg-emerald-100', text: 'text-emerald-600' },
+  { icon: Car, bg: 'bg-purple-100', text: 'text-purple-600' },
+]
+
+function splitHeading(heading: string): [string, string] {
+  const words = heading.split(' ')
+  if (words.length <= 1) return [heading, '']
+  const mid = Math.ceil(words.length / 2)
+  return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')]
+}
 
 const WHY_XPRESS: Array<{ title: string; body: string; icon: React.ComponentType<{ className?: string }> }> = [
   {
@@ -214,47 +248,47 @@ interface CaseStudy {
 
 const CASE_STUDIES: CaseStudy[] = [
   {
-    title: 'How a Pending Court Challan Was Resolved Before a Vehicle Sale',
+    title: 'How a Pending Court Challan Was Cleared Before a Vehicle Transfer',
     problem:
-      'Owner had a buyer ready, but a pending court challan was blocking the RC transfer. The buyer refused to pay the balance until records were clean.',
-    vehicleType: 'Private hatchback',
-    challanSituation: 'Single court challan from a camera-based violation, pending for several months.',
-    location: 'Issued in a different state from where the owner lived.',
-    requiredTimeline: 'Sale was scheduled to close in under 2 weeks.',
+      'The seller had found a buyer, but an unresolved court challan was delaying the RC transfer. The buyer withheld payment until the vehicle records were cleared.',
+    vehicleType: 'Personal hatchback',
+    challanSituation: 'One camera-detected traffic challan had remained pending in court for several months.',
+    location: "The challan was issued in a state different from the owner's residence.",
+    requiredTimeline: 'The vehicle sale was expected to be completed within the next 12 days.',
     actionTaken:
-      'ChallanPay Xpress eligibility check cleared the challan for the 10-day pathway. Owner paid the flat ₹3,000 Xpress fee and shared the required documents.',
+      'ChallanPay Xpress checked the case eligibility and confirmed the 10-day resolution process was available. The owner paid the fixed ₹3,000 Xpress fee and submitted the necessary documents.',
     resolution:
-      'The eligible court challan was resolved within the Xpress timeline, with status updates shared through the process.',
+      'The eligible court challan was resolved within the stated Xpress timeline, with progress updates provided throughout the process.',
     outcome:
-      'RC transfer went through without further hold-ups, and the buyer closed the sale on the originally planned date.',
+      'The RC transfer proceeded without further delays, allowing the buyer to complete the purchase on the scheduled date.',
   },
   {
-    title: 'Insurance Renewal Protected After a Long-Pending Court Challan',
+    title: 'How a Year-Old Court Challan Was Resolved Before Insurance Renewal',
     problem:
-      'Insurance renewal was weeks away and the policyholder discovered a court challan on the vehicle that would complicate paperwork.',
-    vehicleType: 'Sedan — personal use',
-    challanSituation: 'Court challan pending for over a year.',
-    location: 'Issued in the same state as the owner.',
-    requiredTimeline: 'Renewal date fixed — ~3 weeks away.',
+      'The insurance renewal date was approaching, and the vehicle owner found a court challan that could complicate the required paperwork.',
+    vehicleType: 'Personal-use sedan',
+    challanSituation: 'A court challan had remained unresolved for more than twelve months.',
+    location: "The challan was issued within the owner's state of residence.",
+    requiredTimeline: 'The renewal deadline was confirmed, with approximately three weeks remaining.',
     actionTaken:
-      'Eligibility confirmed, Xpress initiated, documents submitted, status tracked through the dashboard.',
+      'Xpress eligibility was verified, the resolution process was started, documents were provided, and progress was monitored through the dashboard.',
     resolution:
-      'Challan resolved within the Xpress window — well before the renewal deadline.',
+      'The challan was resolved within the Xpress timeframe, ahead of the insurance renewal deadline.',
     outcome:
-      'Insurance renewed on time, no last-minute complications on the policy side.',
+      'The insurance renewal was completed on schedule, avoiding last-minute paperwork complications.',
   },
   {
-    title: 'Fleet Operator Clears a Commercial Court Challan Without Travel',
+    title: 'Fleet Manager Resolves an Interstate Court Challan Remotely',
     problem:
-      'A commercial vehicle was off-route due to a pending court challan in another state. The operator could not spare time or staff to travel for a hearing.',
-    vehicleType: 'Commercial goods vehicle',
-    challanSituation: 'Court challan tied to a compliance issue on an inter-state trip.',
-    location: 'Issued in a state 1,000+ km from the fleet base.',
-    requiredTimeline: 'Vehicle needed back on route within 2 weeks.',
+      'A fleet vehicle was held up due to an unresolved court challan issued outside its home state. The operator lacked the time and resources to attend the hearing in person.',
+    vehicleType: 'Commercial transport vehicle',
+    challanSituation: 'A pending court challan related to a regulatory violation during an interstate journey.',
+    location: "Issued in a state located over 1,000 km away from the fleet's operating base.",
+    requiredTimeline: 'The vehicle had to resume operations within 14 days.',
     actionTaken:
-      'Xpress eligibility confirmed for the court challan. Fleet shared vehicle and ownership documents remotely.',
-    resolution: 'Court challan resolved within the Xpress pathway, no on-ground travel required.',
-    outcome: 'Vehicle was back in service on the original timeline the operator had planned for.',
+      'The team verified Xpress eligibility for the court challan and collected the necessary vehicle registration and ownership documents digitally.',
+    resolution: 'The court challan was addressed through the Xpress process without requiring an in-person visit.',
+    outcome: "The vehicle returned to active operations within the fleet manager's planned timeframe, avoiding the need for long-distance travel.",
   },
 ]
 
@@ -323,44 +357,44 @@ interface Faq {
 
 const FAQS: Faq[] = [
   {
-    q: 'What is ChallanPay Xpress?',
-    a: 'ChallanPay Xpress is a service designed to help vehicle owners resolve eligible court challans on a defined 10-day pathway, with a flat ₹3,000 service fee per eligible challan.',
+    q: 'What is ChallanPay Xpress, and how does it help resolve court challans?',
+    a: 'ChallanPay Xpress is a dedicated service designed to help vehicle owners resolve eligible court challans through a streamlined process. It provides assistance with the required documentation and resolution procedure, helping reduce the time and effort involved in managing pending court challans.',
   },
   {
-    q: 'Which court challans are eligible for Xpress?',
-    a: 'Not every court challan qualifies. Eligibility depends on the nature of the challan, the issuing jurisdiction, and the status in court. We check eligibility before you commit, so you know exactly what you are paying for.',
+    q: 'Can I resolve a pending court challan online without visiting the court?',
+    a: 'Eligible court challans may be handled through the ChallanPay Xpress process without requiring the vehicle owner to travel to the court personally. The process depends on the challan type, case requirements, and applicable court procedures.',
   },
   {
-    q: 'How does the 10-day resolution process work?',
-    a: 'Once your challan is confirmed eligible and documents are shared, the Xpress pathway is initiated. The team manages the required steps and keeps you updated through the process — targeting resolution within 10 days.',
+    q: 'How long does ChallanPay Xpress take to resolve a court challan?',
+    a: "ChallanPay Xpress aims to resolve eligible court challans within 10 days. The actual resolution time may depend on document verification, case eligibility, and the relevant authority's processing requirements.",
   },
   {
-    q: 'How much does ChallanPay Xpress cost?',
-    a: 'The service fee is a flat ₹3,000 per eligible court challan. There are no hidden add-ons attached to the Xpress fee itself. Government or statutory amounts, if any, remain separate and are communicated transparently.',
+    q: 'What is the service fee for ChallanPay Xpress?',
+    a: 'The advertised service fee for ChallanPay Xpress is ₹3,000 per eligible court challan. This is the service fee and should be distinguished from any government-imposed fine or other applicable charges. Confirm the applicable total before proceeding.',
   },
   {
-    q: 'Can I use Xpress for a challan from another state?',
-    a: 'Yes. Xpress is designed to work remotely, which is especially useful when the court challan was issued in a city or state different from where you live or operate.',
+    q: 'Which types of court challans can be resolved through ChallanPay Xpress?',
+    a: 'ChallanPay Xpress is intended for eligible court challans that require additional assistance with resolution. Eligibility depends on the challan details and the applicable legal process. Share your vehicle and challan information with the team to confirm whether your case qualifies.',
   },
   {
-    q: 'Can Xpress help with multiple court challans?',
-    a: 'Yes. If more than one court challan on the vehicle is eligible, Xpress can take them on together. The flat ₹3,000 fee applies per eligible challan.',
+    q: 'What documents are required to resolve a court challan through ChallanPay Xpress?',
+    a: 'You may be asked to provide your vehicle registration details, a copy of the Registration Certificate (RC), challan information, and ownership or supporting documents relevant to your case. Additional documents may be required depending on the nature of the challan.',
   },
   {
-    q: 'Can I use Xpress before selling my vehicle?',
-    a: 'Yes. Clearing eligible court challans ahead of a sale is one of the most common reasons people use Xpress — it makes RC transfer smoother and gives buyers confidence.',
+    q: 'Can ChallanPay Xpress help with an interstate court challan?',
+    a: "Yes, you can enquire about an eligible court challan issued in a state different from your vehicle's registered location or fleet operating base. The team can assess the case and explain the available resolution process based on the issuing authority and applicable requirements.",
   },
   {
-    q: 'How do I track my Xpress request?',
-    a: 'You can track status through the ChallanPay dashboard once your Xpress request is initiated.',
+    q: 'How can I check my court challan status and track the resolution process?',
+    a: 'Start by sharing your vehicle number and relevant challan details with ChallanPay. Once your case has been reviewed and submitted for resolution, use the available customer support and status updates to follow its progress. Always verify the final status before treating a challan as resolved.',
   },
   {
-    q: 'Do I need to visit the court?',
-    a: 'Xpress is designed to minimise your involvement with the court directly. In the standard Xpress pathway, you are not expected to appear in court yourself.',
+    q: 'Is ChallanPay Xpress suitable for commercial vehicles and fleet operators?',
+    a: 'ChallanPay Xpress can be useful for commercial vehicle owners and fleet operators managing eligible court challans that may affect vehicle operations. The service is designed to simplify the resolution process and reduce the administrative burden associated with handling pending challans across different locations.',
   },
   {
-    q: 'What documents/information are required?',
-    a: 'Typically, basic vehicle and ownership information along with the challan details. The team will share the exact list once your challan is confirmed eligible.',
+    q: 'How can I get started with ChallanPay Xpress?',
+    a: 'Visit the ChallanPay Xpress page and submit your enquiry with the relevant vehicle and challan details. The team can review your case, confirm eligibility, explain the applicable fees, and guide you through the next steps for resolving your pending court challan.',
   },
 ]
 
@@ -416,6 +450,7 @@ function useFaqStructuredData(faqs: Faq[]) {
 export function ChallanPayXpressPage() {
   useFaqStructuredData(FAQS)
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [openCase, setOpenCase] = useState<number>(0)
   const [vehicleInput, setVehicleInput] = useState('')
   const [inputError, setInputError] = useState('')
   const [shake, setShake] = useState(false)
@@ -452,18 +487,18 @@ export function ChallanPayXpressPage() {
         <section className="relative overflow-hidden bg-white">
           <h1 className="sr-only">ChallanPay Xpress — Fast Court Challan Resolution</h1>
 
-          {/* Mobile: banner on top, text + buttons below (right-aligned) */}
+          {/* Mobile: illustration on top, text + buttons below */}
           <div className="md:hidden">
-            <div className="relative w-full" style={{ aspectRatio: '2172 / 724' }}>
+            <div className="relative w-full bg-bg-page flex items-center justify-center px-6 pt-6 pb-2">
               <img
-                src="/images/xpress-hero-banner.png"
+                src="/images/xpress-hero-illustration.png"
                 alt="ChallanPay Xpress — Solve your challan within 10 days"
-                className="absolute inset-0 w-full h-full object-cover object-center"
+                className="w-full max-w-[360px] h-auto object-contain"
               />
             </div>
-            <div className="px-4 sm:px-6 py-6">
+            <div className="px-4 sm:px-6 pt-4 pb-8">
               <ScrollReveal delay={0.1}>
-                <div className="flex flex-col items-start text-left gap-3">
+                <div className="flex flex-col items-center text-center gap-3">
                   <h2 className="font-display text-3xl sm:text-4xl font-bold text-text-primary leading-tight">
                     Solve Your Challan Within{' '}
                     <span className="text-primary">10 Days</span>
@@ -471,7 +506,7 @@ export function ChallanPayXpressPage() {
                   <p className="font-body text-sm text-text-secondary">
                     The <em>fastest</em> way to move ahead.
                   </p>
-                  <div className="flex flex-col gap-3 w-full max-w-[360px]">
+                  <div className="flex flex-col gap-3 w-full max-w-[360px] mt-2">
                     <motion.div
                       animate={shake ? { x: [-6, 6, -4, 4, 0] } : { x: 0 }}
                       transition={{ duration: 0.4 }}
@@ -496,7 +531,7 @@ export function ChallanPayXpressPage() {
                           if (inputError) setInputError('')
                         }}
                         onKeyDown={handleKeyDown}
-                        placeholder="e.g. UP32 GJ 4083"
+                        placeholder="Enter Vehicle Number"
                         aria-label="Vehicle number"
                         maxLength={12}
                         aria-invalid={inputError ? true : undefined}
@@ -569,7 +604,7 @@ export function ChallanPayXpressPage() {
                             if (inputError) setInputError('')
                           }}
                           onKeyDown={handleKeyDown}
-                          placeholder="e.g. UP32 GJ 4083"
+                          placeholder="Enter Vehicle Number"
                           aria-label="Vehicle number"
                           maxLength={12}
                           aria-invalid={inputError ? true : undefined}
@@ -604,7 +639,7 @@ export function ChallanPayXpressPage() {
             <ScrollReveal>
               <div className="text-center mb-10">
                 <h2 className="font-display text-2xl md:text-3xl font-extrabold text-text-primary">
-                  Who Is ChallanPay Xpress For?
+                  Who Can Benefit from ChallanPay Xpress?
                 </h2>
               </div>
             </ScrollReveal>
@@ -638,7 +673,7 @@ export function ChallanPayXpressPage() {
             <ScrollReveal>
               <div className="text-center mb-10">
                 <h2 className="font-display text-2xl md:text-3xl font-extrabold text-white">
-                  Why people choose Xpress over the usual back-and-forth
+                  Why Choose Xpress Instead of Repeated Follow-Ups?
                 </h2>
               </div>
             </ScrollReveal>
@@ -696,7 +731,7 @@ export function ChallanPayXpressPage() {
             <ScrollReveal>
               <div className="text-center mb-16 md:mb-20">
                 <h2 className="font-display text-2xl md:text-3xl font-extrabold text-text-primary">
-                  Real court challan situations Xpress is built for
+                  Real Court Challan Cases Xpress Helps Resolve
                 </h2>
               </div>
             </ScrollReveal>
@@ -709,35 +744,104 @@ export function ChallanPayXpressPage() {
         <section className="py-20 md:py-28 bg-bg-page">
           <div className="max-w-[1280px] mx-auto px-4 sm:px-6">
             <ScrollReveal>
-              <div className="text-center mb-10">
-                <h2 className="font-display text-2xl md:text-3xl font-extrabold text-text-primary">
-                  ChallanPay Xpress — Real resolution stories
+              <div className="mb-10">
+                <h2 className="font-display text-2xl md:text-4xl font-extrabold text-text-primary leading-tight">
+                  ChallanPay Xpress – Real Challan Resolution Stories
                 </h2>
               </div>
             </ScrollReveal>
 
-            <div className="space-y-6">
-              {CASE_STUDIES.map((cs, i) => (
-                <ScrollReveal key={cs.title} delay={i * 0.06}>
-                  <article className="bg-white border border-border rounded-xl overflow-hidden">
-                    <div className="p-5 md:p-6 border-b border-border bg-gradient-to-br from-primary/5 to-transparent">
-                      <h3 className="font-display text-base md:text-lg font-bold text-text-primary">
-                        {cs.title}
-                      </h3>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
-                      <CaseField label="Problem" value={cs.problem} />
-                      <CaseField label="Vehicle type" value={cs.vehicleType} />
-                      <CaseField label="Challan situation" value={cs.challanSituation} />
-                      <CaseField label="Location" value={cs.location} />
-                      <CaseField label="Required timeline" value={cs.requiredTimeline} />
-                      <CaseField label="Action taken" value={cs.actionTaken} />
-                      <CaseField label="Resolution" value={cs.resolution} />
-                      <CaseField label="Customer outcome" value={cs.outcome} highlight />
-                    </div>
-                  </article>
-                </ScrollReveal>
-              ))}
+            <div className="space-y-4">
+              {CASE_STUDIES.map((cs, i) => {
+                const isOpen = i === openCase
+                if (!isOpen) {
+                  return (
+                    <ScrollReveal key={cs.title} delay={i * 0.04}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenCase(i)}
+                        aria-expanded={false}
+                        className="w-full bg-white border border-border rounded-xl p-4 md:p-5 flex items-center justify-between gap-4 hover:border-emerald-300 hover:shadow-sm transition-all text-left"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <CalendarClock className="w-5 h-5" />
+                          </div>
+                          <span className="font-display font-semibold text-sm md:text-base text-text-primary truncate">
+                            {cs.title}
+                          </span>
+                        </div>
+                        <ChevronDown className="w-5 h-5 text-text-secondary shrink-0 -rotate-90" />
+                      </button>
+                    </ScrollReveal>
+                  )
+                }
+                return (
+                  <ScrollReveal key={cs.title} delay={i * 0.04}>
+                    <article className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
+                      {/* Left: narrative */}
+                      <div className="md:col-span-7 bg-white rounded-2xl border border-border p-5 md:p-7">
+                        <NarrativeRow
+                          icon={AlertTriangle}
+                          label="Problem"
+                          value={cs.problem}
+                        />
+                        <NarrativeDivider />
+                        <NarrativeRow
+                          icon={Car}
+                          label="Challan Situation"
+                          value={cs.challanSituation}
+                        />
+                        <NarrativeDivider />
+                        <NarrativeRow
+                          icon={Clock}
+                          label="Required Timeline"
+                          value={cs.requiredTimeline}
+                        />
+                        <NarrativeDivider />
+                        <NarrativeRow
+                          icon={RefreshCw}
+                          label="Resolution"
+                          value={cs.resolution}
+                        />
+                      </div>
+
+                      {/* Right: meta cards */}
+                      <div className="md:col-span-5 flex flex-col gap-3 md:gap-4">
+                        <MetaCard
+                          icon={User}
+                          iconBg="bg-purple-100"
+                          iconColor="text-purple-600"
+                          label="Vehicle Type"
+                          value={cs.vehicleType}
+                        />
+                        <MetaCard
+                          icon={MapPin}
+                          iconBg="bg-sky-100"
+                          iconColor="text-sky-600"
+                          label="Location"
+                          value={cs.location}
+                        />
+                        <MetaCard
+                          icon={FileText}
+                          iconBg="bg-amber-100"
+                          iconColor="text-amber-600"
+                          label="Action Taken"
+                          value={cs.actionTaken}
+                        />
+                        <MetaCard
+                          icon={CheckCircle2}
+                          iconBg="bg-emerald-100"
+                          iconColor="text-emerald-600"
+                          label="Customer Outcome"
+                          value={cs.outcome}
+                          highlight
+                        />
+                      </div>
+                    </article>
+                  </ScrollReveal>
+                )
+              })}
             </div>
           </div>
         </section>
@@ -758,21 +862,21 @@ export function ChallanPayXpressPage() {
         </section>
 
         {/* ───────────── FAQ ───────────── */}
-        <section id="xpress-faq" className="py-14 md:py-20 bg-bg-page scroll-mt-24">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <section id="xpress-faq" className="py-14 md:py-20 bg-white scroll-mt-24">
+          <div className="max-w-[1280px] mx-auto px-4 sm:px-6">
             <ScrollReveal>
-              <div className="text-center mb-10">
-                <h2 className="font-display text-2xl md:text-3xl font-extrabold text-text-primary">
-                  Frequently asked questions
+              <div className="mb-8 md:mb-10">
+                <h2 className="font-display text-2xl md:text-4xl font-extrabold text-text-primary leading-tight">
+                  Got Questions? We've Got Answers.
                 </h2>
               </div>
             </ScrollReveal>
 
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               {FAQS.map((f, i) => {
                 const isOpen = openFaq === i
                 return (
-                  <ScrollReveal key={f.q} delay={Math.min(i, 6) * 0.03}>
+                  <ScrollReveal key={f.q} delay={Math.min(i, 6) * 0.02}>
                     <div
                       className={cn(
                         'bg-white rounded-xl border transition-colors',
@@ -783,21 +887,31 @@ export function ChallanPayXpressPage() {
                         type="button"
                         onClick={() => setOpenFaq(isOpen ? null : i)}
                         aria-expanded={isOpen}
-                        className="w-full flex items-start justify-between gap-4 text-left p-4 md:p-5"
+                        className="w-full flex items-center justify-between gap-3 text-left p-4"
                       >
-                        <span className="font-display font-semibold text-sm text-text-primary">
+                        <span className="font-display font-bold text-sm text-text-primary flex-1 min-w-0 truncate">
                           {f.q}
                         </span>
-                        <ChevronDown
+                        <span
                           className={cn(
-                            'w-4 h-4 text-text-secondary shrink-0 transition-transform',
-                            isOpen && 'rotate-180 text-primary',
+                            'w-6 h-6 rounded-full border flex items-center justify-center shrink-0 transition-colors',
+                            isOpen
+                              ? 'bg-primary border-primary text-white'
+                              : 'border-border text-text-secondary',
                           )}
-                        />
+                        >
+                          {isOpen ? (
+                            <Minus className="w-3 h-3" />
+                          ) : (
+                            <Plus className="w-3 h-3" />
+                          )}
+                        </span>
                       </button>
                       {isOpen && (
-                        <div className="px-4 md:px-5 pb-4 md:pb-5">
-                          <p className="font-body text-sm text-text-secondary leading-relaxed">{f.a}</p>
+                        <div className="px-4 pb-4">
+                          <p className="font-body text-sm text-text-secondary leading-relaxed">
+                            {f.a}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -805,6 +919,7 @@ export function ChallanPayXpressPage() {
                 )
               })}
             </div>
+
           </div>
         </section>
 
@@ -942,48 +1057,81 @@ function UseCaseCarousel({ topics }: { topics: UseCaseTopic[] }) {
           const logicalIndex = i % n
           const isActive = logicalIndex === activeIndex
           const isMiddleCopy = i >= n && i < 2 * n
+          const BadgeIcon = topic.badge.icon
+          const [headLead, headTail] = splitHeading(topic.heading)
           return (
             <article
               key={`${topic.anchor}-${i}`}
               id={isMiddleCopy ? topic.anchor : undefined}
               className={cn(
-                'snap-center shrink-0 w-[88%] md:w-[84%] bg-bg-page border border-border rounded-2xl overflow-hidden scroll-mt-24 transition-all duration-300 origin-center min-h-[340px] md:min-h-[380px]',
+                'snap-center shrink-0 w-[88%] md:w-[84%] bg-white border border-border rounded-2xl overflow-hidden scroll-mt-24 transition-all duration-300 origin-center',
                 isActive ? 'scale-100 opacity-100 shadow-lg' : 'scale-[0.92] opacity-60',
               )}
             >
-              <div className="grid grid-cols-1 md:grid-cols-5 h-full">
-                <div className="md:col-span-2 bg-white">
+              <div className="grid grid-cols-1 md:grid-cols-2 items-stretch">
+                {/* Left: image */}
+                <div className="relative bg-white flex items-center justify-center p-5 md:p-6">
                   <img
                     src={topic.image}
                     alt={topic.heading}
-                    className="w-full h-64 md:h-full object-cover"
+                    className="w-full h-auto max-h-[200px] md:max-h-[260px] object-contain"
                     loading="lazy"
                   />
                 </div>
-                <div className="md:col-span-3 p-6 md:p-10 flex flex-col gap-6 justify-between">
-                  <div>
-                    <h3 className="font-display text-xl md:text-2xl font-bold text-text-primary mb-2">
-                      {topic.heading}
-                    </h3>
-                    <p className="font-body text-sm md:text-base text-text-secondary leading-relaxed">
-                      {topic.intro}
-                    </p>
+
+                {/* Right: content */}
+                <div className="p-5 md:p-7 flex flex-col gap-3 md:gap-4">
+                  <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full self-start">
+                    <BadgeIcon className="w-3.5 h-3.5" />
+                    <span className="font-body text-[11px] font-bold uppercase tracking-wider">
+                      {topic.badge.label}
+                    </span>
                   </div>
+
+                  <h3 className="font-display text-xl md:text-3xl font-extrabold leading-[1.1]">
+                    <span className="text-text-primary">{headLead}</span>
+                    {headTail && (
+                      <>
+                        {' '}
+                        <span className="text-primary">{headTail}</span>
+                      </>
+                    )}
+                  </h3>
+
+                  <p className="font-body text-sm text-text-secondary leading-relaxed">
+                    {topic.intro}
+                  </p>
+
+                  <div className="h-px bg-border" />
+
                   <div>
-                    <p className="text-sm font-bold text-text-primary mb-2">
+                    <p className="font-display font-bold text-sm text-text-primary mb-2">
                       Common search intents
                     </p>
-                    <ul className="flex flex-col gap-y-1.5">
-                      {topic.keywords.map((k) => (
-                        <li
-                          key={k}
-                          className="flex items-center gap-2 font-body text-sm text-text-secondary"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
-                          <span className="whitespace-nowrap">{k}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {topic.keywords.slice(0, 4).map((k, idx) => {
+                        const tile = KEYWORD_TILES[idx % KEYWORD_TILES.length]
+                        const TileIcon = tile.icon
+                        return (
+                          <div
+                            key={k}
+                            className="flex items-center gap-2.5 bg-white border border-border rounded-lg p-2"
+                          >
+                            <div
+                              className={cn(
+                                'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
+                                tile.bg,
+                              )}
+                            >
+                              <TileIcon className={cn('w-4 h-4', tile.text)} />
+                            </div>
+                            <span className="font-body text-xs text-text-primary leading-snug">
+                              {k}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1277,11 +1425,54 @@ function HeroPill({
   )
 }
 
-function CaseField({
+function NarrativeRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  value: string
+}) {
+  const [lead, ...rest] = value.split(/(?<=\.)\s+/)
+  const detail = rest.join(' ').trim()
+  return (
+    <div className="flex items-start gap-4">
+      <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-1">
+        <Icon className="w-5 h-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] uppercase tracking-wider font-bold text-text-light mb-1.5">
+          {label}
+        </p>
+        <p className="font-body text-sm md:text-[15px] font-semibold text-text-primary leading-relaxed">
+          {lead}
+        </p>
+        {detail && (
+          <p className="font-body text-sm text-text-secondary leading-relaxed mt-1">
+            {detail}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function NarrativeDivider() {
+  return <div className="h-px bg-border my-4 md:my-5 ml-14" />
+}
+
+function MetaCard({
+  icon: Icon,
+  iconBg,
+  iconColor,
   label,
   value,
   highlight = false,
 }: {
+  icon: React.ComponentType<{ className?: string }>
+  iconBg: string
+  iconColor: string
   label: string
   value: string
   highlight?: boolean
@@ -1289,21 +1480,34 @@ function CaseField({
   return (
     <div
       className={cn(
-        'p-4 md:p-5',
-        highlight && 'bg-emerald-50/60',
+        'rounded-2xl border p-4 md:p-5 flex items-start gap-3',
+        highlight
+          ? 'bg-emerald-50/70 border-emerald-200'
+          : 'bg-white border-border',
       )}
     >
-      <p className="text-[10px] uppercase tracking-wider font-bold text-text-light mb-1">
-        {label}
-      </p>
-      <p
+      <div
         className={cn(
-          'font-body text-sm leading-relaxed',
-          highlight ? 'text-emerald-900 font-medium' : 'text-text-secondary',
+          'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
+          iconBg,
+          iconColor,
         )}
       >
-        {value}
-      </p>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] uppercase tracking-wider font-bold text-text-light mb-1">
+          {label}
+        </p>
+        <p
+          className={cn(
+            'font-body text-sm leading-relaxed',
+            highlight ? 'text-emerald-900' : 'text-text-secondary',
+          )}
+        >
+          {value}
+        </p>
+      </div>
     </div>
   )
 }
