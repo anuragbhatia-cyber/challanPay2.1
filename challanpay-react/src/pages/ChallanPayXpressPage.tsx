@@ -863,7 +863,7 @@ export function ChallanPayXpressPage() {
 
         {/* ───────────── FAQ ───────────── */}
         <section id="xpress-faq" className="py-14 md:py-20 bg-white scroll-mt-24">
-          <div className="max-w-[1280px] mx-auto px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
             <ScrollReveal>
               <div className="mb-8 md:mb-10">
                 <h2 className="font-display text-2xl md:text-4xl font-extrabold text-text-primary leading-tight">
