@@ -29,9 +29,12 @@ export function Header() {
 
   // Inside the challan check / discovery / card / payment flow — hide marketing nav.
   const CHALLAN_FLOW_PREFIXES = ['/loading', '/dashboard', '/status', '/challan/', '/payment']
-  const isChallanFlow = CHALLAN_FLOW_PREFIXES.some((p) =>
-    p.endsWith('/') ? location.pathname.startsWith(p) : location.pathname === p || location.pathname.startsWith(`${p}/`),
-  )
+  const CHALLAN_FLOW_EXCEPTIONS = ['/challan/askashna']
+  const isChallanFlow =
+    !CHALLAN_FLOW_EXCEPTIONS.includes(location.pathname) &&
+    CHALLAN_FLOW_PREFIXES.some((p) =>
+      p.endsWith('/') ? location.pathname.startsWith(p) : location.pathname === p || location.pathname.startsWith(`${p}/`),
+    )
 
   const ALL_NAV_LINKS: Array<{ label: string; href: string; badge?: string }> = [
     { label: t.header.roadSmartPartners, href: '/road-smart-partners', badge: t.header.new },

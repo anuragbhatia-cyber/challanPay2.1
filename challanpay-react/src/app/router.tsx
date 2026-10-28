@@ -49,6 +49,7 @@ const TrackStatusPage = lazyWithReload(() => import('@/pages/TrackStatusPage').t
 const ProfilePage = lazyWithReload(() => import('@/pages/ProfilePage').then(m => ({ default: m.ProfilePage })))
 const WalletPage = lazyWithReload(() => import('@/pages/WalletPage').then(m => ({ default: m.WalletPage })))
 const ChallanPayXpressPage = lazyWithReload(() => import('@/pages/ChallanPayXpressPage').then(m => ({ default: m.ChallanPayXpressPage })))
+const AskAshnaPage = lazyWithReload(() => import('@/pages/AskAshnaPage').then(m => ({ default: m.AskAshnaPage })))
 
 function PageFallback() {
   return (
@@ -98,6 +99,7 @@ export const router = createBrowserRouter([
       { path: 'profile', element: withSuspense(ProfilePage) },
       { path: 'wallet', element: withSuspense(WalletPage) },
       { path: 'challanpay-xpress', element: withSuspense(ChallanPayXpressPage) },
+      { path: 'challan/askashna', element: withSuspense(AskAshnaPage) },
     ],
   },
   {
