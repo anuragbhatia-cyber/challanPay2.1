@@ -108,19 +108,36 @@ export function AskAshnaPage() {
         className="relative overflow-hidden min-h-[calc(100vh-64px)]"
         style={{ backgroundColor: '#F1F7FB' }}
       >
-        {/* Illustration pinned to the bottom, bleeding full-width; soft fade at the top blends it into the page color */}
+        {/* Illustration pinned to the bottom. On mobile the illustration overflows left of the
+            viewport anchored bottom-right so the car + challan bubble + camera land in view;
+            desktop uses the natural full-width aspect. A soft gradient fades the top edge. */}
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-0"
-          style={{
-            height: 'min(72vh, 760px)',
-            backgroundImage:
-              "linear-gradient(to bottom, rgba(241,247,251,1) 0%, rgba(241,247,251,0) 22%), url('/images/askashna-highway.png')",
-            backgroundRepeat: 'no-repeat, no-repeat',
-            backgroundPosition: 'top center, bottom center',
-            backgroundSize: '100% 100%, 100% auto',
-          }}
-        />
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-0 overflow-hidden"
+          style={{ height: 'min(72vh, 760px)' }}
+        >
+          {/* Mobile: tall image anchored bottom-right (overflows left) */}
+          <img
+            src="/images/askashna-highway.png"
+            alt=""
+            aria-hidden="true"
+            className="sm:hidden absolute bottom-0 right-0 h-[320px] max-w-none w-auto"
+          />
+          {/* Desktop: full-width natural aspect at the bottom */}
+          <img
+            src="/images/askashna-highway.png"
+            alt=""
+            aria-hidden="true"
+            className="hidden sm:block absolute bottom-0 inset-x-0 w-full h-auto"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-x-0 top-0 h-24 sm:h-28"
+            style={{
+              background:
+                'linear-gradient(to bottom, #F1F7FB 0%, rgba(241,247,251,0) 100%)',
+            }}
+          />
+        </div>
         {/* ───────────── Hero + Search ───────────── */}
         <section className="relative z-20 max-w-[1100px] mx-auto px-4 sm:px-6 pt-16 md:pt-24 pb-8 md:pb-10 text-center">
           <ScrollReveal>
