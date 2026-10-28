@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { Plus, Search, Sparkle, Clock, TrendingUp, X } from 'lucide-react'
+import { Search, Sparkle, Clock, TrendingUp, X, Paperclip, FileText } from 'lucide-react'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { ScrollReveal } from '@/components/shared/ScrollReveal'
 import { cn } from '@/lib/utils'
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 const COMMON_SEARCHES: string[] = [
   'check challan status',
   'pay challan online',
+  'pay court challan',
   'challan by vehicle number',
   'challan by DL number',
   'pending challan check',
@@ -15,6 +16,8 @@ const COMMON_SEARCHES: string[] = [
   'contest a challan',
   'Lok Adalat challan',
 ]
+
+const FEATURED_SEARCHES = new Set<string>(['pay challan online', 'pay court challan'])
 
 const TRENDING_SEARCHES: string[] = [
   'e-challan status',
@@ -34,7 +37,9 @@ export function AskAshnaPage() {
   const [message, setMessage] = useState('')
   const [open, setOpen] = useState(false)
   const [recent, setRecent] = useState<string[]>(DEFAULT_RECENT)
+  const [attachment, setAttachment] = useState<File | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const searchBoxRef = useRef<HTMLDivElement | null>(null)
   const navigate = useNavigate()
 
@@ -84,6 +89,18 @@ export function AskAshnaPage() {
   }
 
   const handleClearRecent = () => setRecent([])
+
+  const handleAttachClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (f) setAttachment(f)
+    e.target.value = ''
+  }
+
+  const handleRemoveAttachment = () => setAttachment(null)
 
   return (
     <PageTransition>
@@ -146,12 +163,39 @@ export function AskAshnaPage() {
                     aria-label="Ask Ashna"
                     className="flex-1 min-w-0 bg-transparent outline-none font-body text-sm md:text-base text-text-primary placeholder:text-text-light py-3"
                   />
+                  {attachment && (
+                    <span className="shrink-0 inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 rounded-full pl-2.5 pr-1 py-1 max-w-[180px]">
+                      <FileText className="w-3.5 h-3.5 shrink-0" />
+                      <span className="font-body text-xs font-medium truncate">
+                        {attachment.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleRemoveAttachment}
+                        aria-label="Remove attachment"
+                        className="shrink-0 w-5 h-5 rounded-full hover:bg-primary/20 flex items-center justify-center"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx,.txt"
+                    onChange={handleFileSelected}
+                    className="sr-only"
+                    aria-hidden="true"
+                    tabIndex={-1}
+                  />
                   <button
                     type="button"
-                    aria-label="Add attachment"
-                    className="shrink-0 w-10 h-10 rounded-full text-text-light hover:text-text-primary hover:bg-bg-page transition-colors flex items-center justify-center"
+                    onClick={handleAttachClick}
+                    aria-label="Attach file"
+                    title="Attach file"
+                    className="shrink-0 inline-flex items-center justify-center gap-1 h-10 w-10 rounded-full border border-border bg-white hover:border-primary hover:text-primary text-text-secondary transition-colors"
                   >
-                    <Plus className="w-5 h-5" />
+                    <Paperclip className="w-4 h-4" />
                   </button>
                   <button
                     type="submit"
@@ -248,21 +292,26 @@ export function AskAshnaPage() {
 
           <ScrollReveal delay={0.2}>
             <div className="flex flex-wrap items-center justify-center gap-2.5 md:gap-3">
-              {COMMON_SEARCHES.map((text) => (
-                <button
-                  key={text}
-                  type="button"
-                  onClick={() => handleChipClick(text)}
-                  className={cn(
-                    'inline-flex items-center gap-2 bg-white/80 hover:bg-white border border-white rounded-full',
-                    'px-4 md:px-5 py-2 md:py-2.5 shadow-[0_1px_2px_rgba(15,29,59,0.04)] hover:shadow-md',
-                    'font-body text-xs md:text-sm text-text-primary transition-all',
-                  )}
-                >
-                  <Search className="w-3.5 h-3.5 text-text-light" />
-                  {text}
-                </button>
-              ))}
+              {COMMON_SEARCHES.map((text) => {
+                const isFeatured = FEATURED_SEARCHES.has(text)
+                return (
+                  <button
+                    key={text}
+                    type="button"
+                    onClick={() => handleChipClick(text)}
+                    className={cn(
+                      'inline-flex items-center gap-2 rounded-full px-4 md:px-5 py-2 md:py-2.5 transition-all',
+                      'font-body text-xs md:text-sm',
+                      isFeatured
+                        ? 'bg-white border-2 border-primary text-primary font-semibold shadow-[0_1px_2px_rgba(8,145,178,0.08)] hover:bg-primary/5 hover:shadow-md'
+                        : 'bg-white/80 border border-white text-text-primary shadow-[0_1px_2px_rgba(15,29,59,0.04)] hover:bg-white hover:shadow-md',
+                    )}
+                  >
+                    <Search className={cn('w-3.5 h-3.5', isFeatured ? 'text-primary' : 'text-text-light')} />
+                    {text}
+                  </button>
+                )
+              })}
             </div>
           </ScrollReveal>
         </section>
