@@ -12,9 +12,6 @@ const COMMON_SEARCHES: string[] = [
   'challan by vehicle number',
   'challan by DL number',
   'pending challan check',
-  'traffic fine list',
-  'contest a challan',
-  'Lok Adalat challan',
 ]
 
 const FEATURED_SEARCHES = new Set<string>(['pay challan online', 'pay court challan'])
@@ -105,16 +102,13 @@ export function AskAshnaPage() {
   return (
     <PageTransition>
       <div
-        className="relative overflow-hidden min-h-[calc(100vh-64px)]"
+        className="relative overflow-hidden min-h-[720px] sm:min-h-[calc(100vh-64px)]"
         style={{ backgroundColor: '#F1F7FB' }}
       >
         {/* Illustration pinned to the bottom. On mobile the illustration overflows left of the
             viewport anchored bottom-right so the car + challan bubble + camera land in view;
             desktop uses the natural full-width aspect. A soft gradient fades the top edge. */}
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-0 overflow-hidden"
-          style={{ height: 'min(72vh, 760px)' }}
-        >
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 overflow-hidden h-[320px] sm:h-[72vh] sm:max-h-[760px]">
           {/* Mobile: tall image anchored bottom-right (overflows left) */}
           <img
             src="/images/askashna-highway.png"
@@ -150,6 +144,9 @@ export function AskAshnaPage() {
                 fill="currentColor"
               />
             </h1>
+            <p className="mt-4 font-body text-sm md:text-base text-text-secondary">
+              Worried about challans? <span className="font-semibold text-text-primary">Ask Ashna.</span>
+            </p>
           </ScrollReveal>
 
           <ScrollReveal delay={0.1}>
