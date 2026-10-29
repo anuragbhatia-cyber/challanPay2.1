@@ -700,9 +700,9 @@ export function ChallanPayXpressPage() {
                 className="lg:col-span-4 order-1 lg:order-2 flex items-stretch justify-center"
               >
                 <img
-                  src="/images/xpress-hero-illustration.png"
+                  src="/images/xpress-why-illustration.png"
                   alt="ChallanPay Xpress — fast court challan resolution"
-                  className="w-full max-w-[420px] h-full object-cover bg-white border border-border rounded-2xl"
+                  className="w-full h-full object-contain bg-white border border-border rounded-2xl"
                   loading="lazy"
                 />
               </ScrollReveal>
