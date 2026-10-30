@@ -290,21 +290,13 @@ export function PaymentPage() {
           {/* Body */}
           <div className="flex-1 min-w-0 p-4">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span
-                  aria-hidden
-                  className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white text-primary border border-primary/20"
-                >
-                  <ShieldCheck className="w-5 h-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="font-display font-bold text-sm text-text-primary">
-                    Road Safety coupon
-                  </p>
-                  <p className="text-xs font-semibold text-emerald-600 mt-0.5">
-                    {ROAD_SAFETY_CODE} applied · saved ₹{formatINR(totalReward)}
-                  </p>
-                </div>
+              <div className="min-w-0">
+                <p className="font-display font-bold text-sm text-text-primary">
+                  Road Safety coupon
+                </p>
+                <p className="text-xs font-semibold text-emerald-600 mt-0.5">
+                  {ROAD_SAFETY_CODE} applied · saved ₹{formatINR(totalReward)}
+                </p>
               </div>
               <button
                 type="button"
