@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
-import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, Info, Check, Clock, TicketPercent, ChevronRight, BadgeCheck, Coins } from 'lucide-react'
+import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, ChevronUp, Info, Check, Clock, TicketPercent, ChevronRight, BadgeCheck, Coins, ShieldCheck, Sparkles, HeartHandshake } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { Skeleton } from '@/components/shared/Skeleton'
@@ -27,6 +27,24 @@ const CREDIT_EXPIRY_LABEL = '27 Sep'
 const CREDIT_CAP_PCT = 0.10
 // Temporarily hide the ChallanPay Credit block; flip to true to restore.
 const SHOW_CREDIT_CARD = true
+
+// Road Safety coupon — replaces the legacy pledge checkbox + reward banner.
+// In production the Total Reward comes from the Reward Engine. For this demo
+// we scale the reward off the court-portion of the cart with a floor at the
+// legacy PLEDGE_REWARD so small carts still see ₹1,000.
+const ROAD_SAFETY_CODE = 'ROADSAFETY'
+const ROAD_SAFETY_MIN_CART = 2000 // NCV demo threshold
+const ROAD_SAFETY_MARGIN_PCT = 0.25
+const LOTS247_SERVICE_NAME = 'LOTS247 Subscription'
+const LOTS247_DURATION_LABEL = '12 months'
+const LOTS247_SERVICE_VALUE = 500
+const LOTS247_CUSTOMER_PRICE = 250
+const LOTS247_BENEFITS: string[] = [
+  '24×7 pan-India roadside assistance',
+  'Towing, battery jumpstart, flat-tyre & fuel delivery',
+  'Up to 50 km free towing per request',
+  'Access to LOTS247 trusted partner network',
+]
 
 type Coupon = {
   id: string
@@ -166,7 +184,8 @@ export function PaymentPage() {
   const isPremium = resolutionMethod === 'premium'
   const displaySummary = summary
 
-  const [pledgeChecked, setPledgeChecked] = useState(false)
+  const [roadSafetyApplied, setRoadSafetyApplied] = useState(true)
+  const [showBenefits, setShowBenefits] = useState(false)
   const [showCouponSheet, setShowCouponSheet] = useState(false)
   const [appliedCouponId, setAppliedCouponId] = useState<string | null>(null)
   const [showBackConfirm, setShowBackConfirm] = useState(false)
@@ -180,21 +199,37 @@ export function PaymentPage() {
   const [showOnlineChallans, setShowOnlineChallans] = useState(false)
   const [creditEnabled, setCreditEnabled] = useState(false)
 
-  const pledgeActive = pledgeChecked && !isPremium && displaySummary.expressCount === 0
-  const subtotalAfterPledge = pledgeActive
-    ? Math.max(0, displaySummary.subtotal - PLEDGE_REWARD)
+  // Road Safety reward — eligibility, Total Reward (demo-only), and the two
+  // line items the customer sees (Reward + LOTS247 membership).
+  const regularCourtPortion = displaySummary.regularCourtAmount + displaySummary.regularFee
+  const totalReward = useMemo(() => {
+    const scaled = Math.round(regularCourtPortion * ROAD_SAFETY_MARGIN_PCT)
+    return Math.max(PLEDGE_REWARD, scaled)
+  }, [regularCourtPortion])
+  const configuredServiceOffer = LOTS247_SERVICE_VALUE - LOTS247_CUSTOMER_PRICE
+  const serviceOffer = Math.min(configuredServiceOffer, totalReward)
+  const rewardAmount = Math.max(0, totalReward - serviceOffer)
+  const roadSafetyEligible =
+    !isPremium &&
+    displaySummary.regularCourtCount > 0 &&
+    displaySummary.expressCount === 0 &&
+    displaySummary.subtotal >= ROAD_SAFETY_MIN_CART
+  const roadSafetyActive = roadSafetyApplied && roadSafetyEligible
+  const subtotalAfterReward = roadSafetyActive
+    ? Math.max(0, displaySummary.subtotal - totalReward)
     : displaySummary.subtotal
   const appliedCoupon = useMemo(
     () => availableCoupons.find((c) => c.id === appliedCouponId) ?? null,
     [appliedCouponId, availableCoupons],
   )
+  // Road Safety takes precedence — any other coupon is ignored while it's applied.
   const couponEligible = (c: Coupon) =>
-    !c.disabled && subtotalAfterPledge >= (c.minAmount ?? 0)
+    !c.disabled && subtotalAfterReward >= (c.minAmount ?? 0)
   const couponDiscount =
-    appliedCoupon && couponEligible(appliedCoupon)
-      ? Math.min(appliedCoupon.discount, subtotalAfterPledge)
+    !roadSafetyActive && appliedCoupon && couponEligible(appliedCoupon)
+      ? Math.min(appliedCoupon.discount, subtotalAfterReward)
       : 0
-  const subtotalAfterCoupon = Math.max(0, subtotalAfterPledge - couponDiscount)
+  const subtotalAfterCoupon = Math.max(0, subtotalAfterReward - couponDiscount)
   const creditCap = Math.floor(subtotalAfterCoupon * CREDIT_CAP_PCT)
   const creditEligibleCoins = Math.min(CREDIT_USABLE_COINS, creditCap || CREDIT_USABLE_COINS)
   const creditApplied = creditEnabled ? Math.min(creditEligibleCoins, subtotalAfterCoupon) : 0
@@ -220,57 +255,185 @@ export function PaymentPage() {
     })
   }
 
-  const handlePledge = () => {
-    const next = !pledgeChecked
-    setPledgeChecked(next)
-    if (next) {
-      burstConfetti()
-      toast.success('Congratulations! Reward applied 🎉')
-    }
-  }
-
   const applyCoupon = (c: Coupon) => {
+    // One coupon at a time — picking a regular coupon drops Road Safety.
+    setRoadSafetyApplied(false)
+    setShowBenefits(false)
     setAppliedCouponId(c.id)
     burstConfetti()
     toast.success(`Coupon ${c.code} applied 🎉`)
   }
 
-  const pledgeCard = !isPremium ? (
-    <div className="bg-white rounded-2xl overflow-hidden border border-border/60 p-4 sm:p-5">
-      <label className="flex items-center justify-start gap-3 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={pledgeChecked}
-          onChange={handlePledge}
-          className="w-6 h-6 rounded border-primary text-primary accent-primary focus:ring-primary flex-shrink-0"
-        />
-        <p className="font-display font-medium text-base text-text-primary">
-          {t.payment.pledgeTitle}
-        </p>
-      </label>
-      <div
-        className={cn(
-          'mt-4 flex items-center gap-3 rounded-lg p-3.5 transition-colors',
-          pledgeChecked
-            ? 'bg-gradient-to-r from-emerald-100 via-emerald-50 to-white'
-            : 'bg-gradient-to-r from-amber-100 via-amber-50 to-white'
-        )}
-      >
-        <Gift
-          className={cn(
-            'w-6 h-6 flex-shrink-0',
-            pledgeChecked ? 'text-emerald-700' : 'text-amber-700'
-          )}
-        />
-        <p
-          className={cn(
-            'font-display text-sm sm:text-base font-bold leading-tight whitespace-nowrap truncate min-w-0',
-            pledgeChecked ? 'text-emerald-700' : 'text-amber-700'
-          )}
-        >
-          {pledgeChecked ? t.payment.rewardAppliedCongrats : t.payment.rewardAmount}
-        </p>
+  const applyRoadSafety = () => {
+    setAppliedCouponId(null)
+    setRoadSafetyApplied(true)
+    burstConfetti()
+    toast.success('Road Safety coupon applied 🎉')
+  }
+
+  const removeRoadSafety = () => {
+    setRoadSafetyApplied(false)
+    setShowBenefits(false)
+    toast.success('Road Safety coupon removed. Prices updated.')
+  }
+
+  const otherEligibleCouponsCount = availableCoupons.filter(
+    (c) => !c.disabled,
+  ).length
+
+  const roadSafetyCard = roadSafetyActive ? (
+    <div className="bg-white rounded-2xl border border-border/60 overflow-hidden">
+      <div className="p-3 sm:p-4">
+        <div className="flex overflow-hidden rounded-xl border border-primary bg-primary/5">
+          {/* Left color rail */}
+          <div aria-hidden className="flex-shrink-0 w-2 bg-primary" />
+          {/* Body */}
+          <div className="flex-1 min-w-0 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span
+                  aria-hidden
+                  className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white text-primary border border-primary/20"
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-display font-bold text-sm text-text-primary">
+                    Road Safety coupon
+                  </p>
+                  <p className="text-xs font-semibold text-emerald-600 mt-0.5">
+                    {ROAD_SAFETY_CODE} applied · saved ₹{formatINR(totalReward)}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={removeRoadSafety}
+                className="flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-primary text-primary hover:bg-primary/10 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+
+            <div className="my-3 border-t border-dashed border-border" />
+
+            <div className="space-y-2.5">
+          {/* Reward card */}
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-border/70 bg-white">
+            <span
+              aria-hidden
+              className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-amber-100 text-amber-600"
+            >
+              <HeartHandshake className="w-5 h-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-display font-semibold text-sm text-text-primary">Pledge reward</p>
+              <p className="text-[11px] font-medium text-text-secondary mt-0.5">
+                Applied to follow road safety rules
+              </p>
+            </div>
+            <div className="flex-shrink-0 text-right">
+              <p className="text-xs font-semibold text-text-secondary leading-none">You saved</p>
+              <p className="font-display text-xl font-extrabold text-emerald-700 tabular-nums leading-tight mt-1">
+                ₹{formatINR(rewardAmount)}
+              </p>
+            </div>
+          </div>
+
+          {/* LOTS247 card */}
+          <div className="rounded-xl bg-gradient-to-r from-emerald-50 via-emerald-50/80 to-emerald-100/60 border border-emerald-200/70 overflow-hidden">
+            {/* Compact header row */}
+            <div
+              className="relative p-3 bg-no-repeat"
+              style={{
+                backgroundImage: "url('/images/lots247-highway.png')",
+                backgroundSize: 'auto 100%',
+                backgroundPosition: 'right center',
+              }}
+            >
+              {/* Soft left-side fade so text stays readable over the illustration */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    'linear-gradient(to right, rgba(236,253,245,0.98) 0%, rgba(236,253,245,0.85) 45%, rgba(236,253,245,0) 85%)',
+                }}
+              />
+
+              <div className="relative flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <img
+                    src="/images/lots247-logo.png"
+                    alt="LOTS247"
+                    className="h-6 sm:h-7 w-auto"
+                  />
+                  <div className="absolute top-0 right-0 flex flex-col items-end gap-0.5 px-2 py-1 rounded-lg bg-white/95 border border-white shadow-[0_2px_6px_rgba(6,78,59,0.12)]">
+                    <span className="text-[11px] text-text-light line-through tabular-nums leading-none">
+                      ₹{formatINR(LOTS247_SERVICE_VALUE)}
+                    </span>
+                    <span className="font-display text-base font-extrabold text-emerald-700 tabular-nums leading-none">
+                      ₹{formatINR(LOTS247_CUSTOMER_PRICE)}
+                    </span>
+                  </div>
+                  <p className="font-body text-[13px] font-medium text-text-secondary leading-snug">
+                    Additional savings &amp; exclusive benefits
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowBenefits((v) => !v)}
+                    aria-expanded={showBenefits}
+                    className={cn(
+                      'mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-colors',
+                      showBenefits
+                        ? 'bg-primary/5 border-primary text-primary'
+                        : 'bg-white border-border text-primary hover:bg-primary/5',
+                    )}
+                  >
+                    {showBenefits ? 'Hide benefits' : 'View benefits'}
+                    {showBenefits ? (
+                      <ChevronUp className="w-3 h-3" />
+                    ) : (
+                      <ChevronDown className="w-3 h-3" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Expanded benefits */}
+            {showBenefits && (
+              <div className="px-3 pb-3">
+                <div className="rounded-lg bg-white px-3 py-3">
+                  <p className="text-xs font-semibold text-text-secondary mb-2.5">
+                    {LOTS247_DURATION_LABEL} membership includes
+                  </p>
+                  <ul className="space-y-1">
+                    {LOTS247_BENEFITS.map((b) => (
+                      <li key={b} className="flex items-start gap-2 text-[12px] text-text-secondary leading-snug">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 mt-0.5 flex-shrink-0" strokeWidth={3} />
+                        <span>{b}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+          </div>
+        </div>
       </div>
+      {otherEligibleCouponsCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowCouponSheet(true)}
+          className="w-full flex items-center justify-between px-4 sm:px-5 py-2.5 border-t border-border/60 text-xs font-semibold text-primary hover:bg-primary/[0.03] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+        >
+          <span>View all 2 offers</span>
+          <ChevronRight className="w-4 h-4" aria-hidden />
+        </button>
+      )}
     </div>
   ) : null
 
@@ -521,6 +684,68 @@ export function PaymentPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+              {roadSafetyEligible && (
+                <div
+                  className={cn(
+                    'relative flex overflow-hidden rounded-xl border transition-colors',
+                    roadSafetyActive
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border/70 bg-white',
+                  )}
+                >
+                  <div aria-hidden className="flex-shrink-0 w-2 bg-primary" />
+                  <div className="flex-1 min-w-0 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-display font-bold text-sm text-text-primary tracking-wide">
+                            Road Safety coupon
+                          </p>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary whitespace-nowrap uppercase tracking-wider">
+                            2 offers
+                          </span>
+                        </div>
+                        <p className="text-xs font-semibold text-emerald-600 mt-0.5">
+                          {roadSafetyActive
+                            ? `Applied · saved ₹${formatINR(totalReward)}`
+                            : `Save ₹${formatINR(rewardAmount)} + ${LOTS247_SERVICE_NAME} bonus`}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (roadSafetyActive) {
+                            removeRoadSafety()
+                          } else {
+                            applyRoadSafety()
+                            setShowCouponSheet(false)
+                          }
+                        }}
+                        className={cn(
+                          'flex-shrink-0 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors',
+                          roadSafetyActive
+                            ? 'bg-white border border-primary text-primary hover:bg-primary/10'
+                            : 'bg-primary text-white hover:bg-primary-dark',
+                        )}
+                      >
+                        {roadSafetyActive ? 'Remove' : 'Apply'}
+                      </button>
+                    </div>
+
+                    <div className="my-3 border-t border-dashed border-border" />
+
+                    <ul className="space-y-1.5 text-[12px] text-text-secondary">
+                      <li>
+                        Reward · <strong className="text-text-primary">−₹{formatINR(rewardAmount)}</strong>
+                      </li>
+                      <li>
+                        {LOTS247_SERVICE_NAME} · <span className="line-through text-text-light">₹{formatINR(LOTS247_SERVICE_VALUE)}</span>{' '}
+                        <strong className="text-text-primary">₹{formatINR(LOTS247_CUSTOMER_PRICE)}</strong>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              )}
               {availableCoupons.map((c) => {
                 const eligible = couponEligible(c)
                 const isApplied = appliedCouponId === c.id
@@ -1286,34 +1511,15 @@ export function PaymentPage() {
                       {(() => {
                         const courtGross =
                           displaySummary.courtAmount + displaySummary.regularFee + displaySummary.expressFee
-                        const courtNet = Math.max(0, courtGross - (pledgeActive ? PLEDGE_REWARD : 0))
                         return (
-                          <>
-                            {pledgeActive && (
-                              <div className="mt-3.5 flex items-baseline justify-between rounded-lg bg-emerald-50 px-3 py-2">
-                                <span className="font-display text-sm font-semibold text-emerald-700 inline-flex items-center gap-1.5">
-                                  <Gift className="w-4 h-4" aria-hidden />
-                                  Pledge reward applied
-                                </span>
-                                <span className="font-display text-sm font-semibold text-emerald-700 tabular-nums">
-                                  -₹{formatINR(PLEDGE_REWARD)}
-                                </span>
-                              </div>
-                            )}
-                            <div
-                              className={cn(
-                                'pt-3 border-t border-border/60 flex items-baseline justify-between',
-                                pledgeActive ? 'mt-3' : 'mt-3.5',
-                              )}
-                            >
-                              <span className="font-display text-sm font-semibold text-text-primary">
-                                Total Payable Court Challans
-                              </span>
-                              <span className="font-display text-base font-bold text-text-primary tabular-nums">
-                                ₹{formatINR(courtNet)}
-                              </span>
-                            </div>
-                          </>
+                          <div className="mt-3.5 pt-3 border-t border-border/60 flex items-baseline justify-between">
+                            <span className="font-display text-sm font-semibold text-text-primary">
+                              Total Payable Court Challans
+                            </span>
+                            <span className="font-display text-base font-bold text-text-primary tabular-nums">
+                              ₹{formatINR(courtGross)}
+                            </span>
+                          </div>
                         )
                       })()}
                     </section>
@@ -1332,8 +1538,8 @@ export function PaymentPage() {
 
           {/* Right: Payment Summary (desktop only) */}
           <div className="hidden lg:block lg:sticky lg:top-20 lg:self-start min-w-0 space-y-4">
-            {pageState !== 'loading' && pledgeCard}
-            {pageState !== 'loading' && couponCard}
+            {pageState !== 'loading' && roadSafetyCard}
+            {pageState !== 'loading' && !roadSafetyActive && couponCard}
             {pageState !== 'loading' && SHOW_CREDIT_CARD && creditCard}
             {pageState === 'loading' ? (
               <div className="bg-white rounded-2xl p-6 space-y-4">
@@ -1372,19 +1578,13 @@ export function PaymentPage() {
                   onOnlineFeeInfo={() => setLegalChargesInfo('online')}
                   onCourtFeeInfo={() => setLegalChargesInfo('court')}
                 />
-                {pledgeActive && (
-                  <div className="flex justify-between text-sm bg-emerald-50 -mx-4 px-4 py-2.5 rounded-lg">
-                    <span className="font-display font-semibold text-emerald-700">{t.payment.pledgeReward}</span>
-                    <span className="font-display font-semibold text-emerald-700">-₹{formatINR(PLEDGE_REWARD)}</span>
-                  </div>
-                )}
                 {regularBlockTotal(displaySummary) > 0 && (
                   <>
                     <hr className="border-border" />
                     <div className="flex justify-between items-baseline">
                       <span className="font-display text-[13px] font-bold text-text-primary">Subtotal</span>
                       <span className="font-display text-sm font-bold text-text-primary">
-                        ₹{formatINR(Math.max(0, regularBlockTotal(displaySummary) - (pledgeActive ? PLEDGE_REWARD : 0)))}
+                        ₹{formatINR(regularBlockTotal(displaySummary))}
                       </span>
                     </div>
                   </>
@@ -1398,6 +1598,16 @@ export function PaymentPage() {
                     <ResolutionBadge />
                   </div>
                   <ExpressSummary summary={displaySummary} />
+                </div>
+              )}
+
+              {roadSafetyActive && (
+                <div className="mt-3">
+                  <RoadSafetyBreakup
+                    rewardAmount={rewardAmount}
+                    serviceOffer={serviceOffer}
+                    serviceName={LOTS247_SERVICE_NAME}
+                  />
                 </div>
               )}
 
@@ -1467,8 +1677,10 @@ export function PaymentPage() {
               <p className="font-display text-lg font-bold text-text-primary">
                 ₹{formatINR(payNowTotal)}
               </p>
-              {pledgeActive && (
-                <p className="text-[10px] text-success font-medium">{t.payment.savedAmount}</p>
+              {roadSafetyActive && (
+                <p className="text-[10px] text-success font-medium">
+                  You saved ₹{formatINR(totalReward)}
+                </p>
               )}
             </div>
             <button
@@ -1502,8 +1714,8 @@ export function PaymentPage() {
           </div>
         ) : (
         <>
-        {pledgeCard && <div className="lg:hidden mt-4">{pledgeCard}</div>}
-        <div className="lg:hidden mt-4">{couponCard}</div>
+        {roadSafetyCard && <div className="lg:hidden mt-4">{roadSafetyCard}</div>}
+        {!roadSafetyActive && <div className="lg:hidden mt-4">{couponCard}</div>}
         {SHOW_CREDIT_CARD && <div className="lg:hidden mt-4">{creditCard}</div>}
         <details open className="lg:hidden mt-4 mb-20 bg-white rounded-xl border border-border shadow-sm overflow-hidden">
           <summary className="flex items-center justify-between p-4 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
@@ -1521,19 +1733,13 @@ export function PaymentPage() {
                 onOnlineFeeInfo={() => setLegalChargesInfo('online')}
                 onCourtFeeInfo={() => setLegalChargesInfo('court')}
               />
-              {pledgeActive && (
-                <div className="flex justify-between text-sm bg-emerald-50 -mx-4 px-4 py-2.5 rounded-lg">
-                  <span className="font-display font-semibold text-emerald-700">{t.payment.pledgeReward}</span>
-                  <span className="font-display font-semibold text-emerald-700">-₹{formatINR(PLEDGE_REWARD)}</span>
-                </div>
-              )}
               {regularBlockTotal(displaySummary) > 0 && (
                 <>
                   <hr className="border-border" />
                   <div className="flex justify-between items-baseline">
                     <span className="font-display text-[13px] font-bold text-text-primary">Total Amount</span>
                     <span className="font-display text-sm font-bold text-text-primary">
-                      ₹{formatINR(Math.max(0, regularBlockTotal(displaySummary) - (pledgeActive ? PLEDGE_REWARD : 0)))}
+                      ₹{formatINR(regularBlockTotal(displaySummary))}
                     </span>
                   </div>
                 </>
@@ -1548,6 +1754,14 @@ export function PaymentPage() {
                 </div>
                 <ExpressSummary summary={displaySummary} />
               </div>
+            )}
+
+            {roadSafetyActive && (
+              <RoadSafetyBreakup
+                rewardAmount={rewardAmount}
+                serviceOffer={serviceOffer}
+                serviceName={LOTS247_SERVICE_NAME}
+              />
             )}
 
             {couponDiscount > 0 && (
@@ -1678,6 +1892,39 @@ function RegularSummary({ summary, t, onOnlineFeeInfo, onCourtFeeInfo }: Summary
 
 function regularBlockTotal(summary: SummaryBreakdownProps['summary']) {
   return summary.onlineAmount + summary.onlineFee + summary.regularCourtAmount + summary.regularFee
+}
+
+function RoadSafetyBreakup({
+  rewardAmount,
+  serviceOffer,
+  serviceName,
+}: {
+  rewardAmount: number
+  serviceOffer: number
+  serviceName: string
+}) {
+  return (
+    <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4 space-y-2">
+      <div className="flex justify-between text-sm">
+        <span className="font-display font-semibold text-emerald-700 inline-flex items-center gap-1.5">
+          <Gift className="w-4 h-4" aria-hidden />
+          Reward
+        </span>
+        <span className="font-display font-semibold text-emerald-700 tabular-nums">
+          −₹{formatINR(rewardAmount)}
+        </span>
+      </div>
+      <div className="flex justify-between text-sm">
+        <span className="font-display font-semibold text-emerald-700 inline-flex items-center gap-1.5">
+          <Sparkles className="w-4 h-4" aria-hidden />
+          {serviceName}
+        </span>
+        <span className="font-display font-semibold text-emerald-700 tabular-nums">
+          −₹{formatINR(serviceOffer)}
+        </span>
+      </div>
+    </div>
+  )
 }
 
 function ExpressSummary({ summary }: { summary: SummaryBreakdownProps['summary'] }) {
