@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { useNavigate, useSearchParams, useLocation } from 'react-router'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
-import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, ChevronUp, Info, Check, Clock, TicketPercent, ChevronRight, BadgeCheck, Coins, ShieldCheck, Sparkles, HeartHandshake } from 'lucide-react'
+import { Gift, ArrowLeft, X, ShieldAlert, AlertTriangle, ChevronDown, ChevronUp, Info, Check, Clock, TicketPercent, ChevronRight, BadgeCheck, Coins, Sparkles, HeartHandshake } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageTransition } from '@/components/shared/PageTransition'
 import { Skeleton } from '@/components/shared/Skeleton'
@@ -108,8 +108,11 @@ const COUPONS: Coupon[] = [
 export function PaymentPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const availableCoupons = searchParams.get('coupons') === 'empty' ? [] : COUPONS
+  // Variant without the LOTS247 subscription — reward is the only coupon item.
+  const showSubscription = location.pathname !== '/challan/nosubscription'
 
   const challans = useChallanStore((s) => s.challans)
   const selectedChallanIds = useChallanStore((s) => s.selectedChallanIds)
@@ -206,7 +209,9 @@ export function PaymentPage() {
     const scaled = Math.round(regularCourtPortion * ROAD_SAFETY_MARGIN_PCT)
     return Math.max(PLEDGE_REWARD, scaled)
   }, [regularCourtPortion])
-  const configuredServiceOffer = LOTS247_SERVICE_VALUE - LOTS247_CUSTOMER_PRICE
+  const configuredServiceOffer = showSubscription
+    ? LOTS247_SERVICE_VALUE - LOTS247_CUSTOMER_PRICE
+    : 0
   const serviceOffer = Math.min(configuredServiceOffer, totalReward)
   const rewardAmount = Math.max(0, totalReward - serviceOffer)
   const roadSafetyEligible =
@@ -332,7 +337,8 @@ export function PaymentPage() {
             </div>
           </div>
 
-          {/* LOTS247 card */}
+          {/* LOTS247 card — hidden on the /challan/nosubscription variant */}
+          {showSubscription && (
           <div className="rounded-xl bg-gradient-to-r from-emerald-50 via-emerald-50/80 to-emerald-100/60 border border-emerald-200/70 overflow-hidden">
             {/* Compact header row */}
             <div
@@ -412,6 +418,7 @@ export function PaymentPage() {
               </div>
             )}
           </div>
+          )}
         </div>
           </div>
         </div>
@@ -422,7 +429,7 @@ export function PaymentPage() {
           onClick={() => setShowCouponSheet(true)}
           className="w-full flex items-center justify-between px-4 sm:px-5 py-2.5 border-t border-border/60 text-xs font-semibold text-primary hover:bg-primary/[0.03] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
         >
-          <span>View all 2 offers</span>
+          <span>View all {showSubscription ? '2' : '1'} offer{showSubscription ? 's' : ''}</span>
           <ChevronRight className="w-4 h-4" aria-hidden />
         </button>
       )}
@@ -693,14 +700,18 @@ export function PaymentPage() {
                           <p className="font-display font-bold text-sm text-text-primary tracking-wide">
                             Road Safety coupon
                           </p>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary whitespace-nowrap uppercase tracking-wider">
-                            2 offers
-                          </span>
+                          {showSubscription && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary whitespace-nowrap uppercase tracking-wider">
+                              2 offers
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs font-semibold text-emerald-600 mt-0.5">
                           {roadSafetyActive
                             ? `Applied · saved ₹${formatINR(totalReward)}`
-                            : `Save ₹${formatINR(rewardAmount)} + ${LOTS247_SERVICE_NAME} bonus`}
+                            : showSubscription
+                              ? `Save ₹${formatINR(rewardAmount)} + ${LOTS247_SERVICE_NAME} bonus`
+                              : `Save ₹${formatINR(rewardAmount)} on this order!`}
                         </p>
                       </div>
                       <button
@@ -730,10 +741,12 @@ export function PaymentPage() {
                       <li>
                         Reward · <strong className="text-text-primary">−₹{formatINR(rewardAmount)}</strong>
                       </li>
-                      <li>
-                        {LOTS247_SERVICE_NAME} · <span className="line-through text-text-light">₹{formatINR(LOTS247_SERVICE_VALUE)}</span>{' '}
-                        <strong className="text-text-primary">₹{formatINR(LOTS247_CUSTOMER_PRICE)}</strong>
-                      </li>
+                      {showSubscription && (
+                        <li>
+                          {LOTS247_SERVICE_NAME} · <span className="line-through text-text-light">₹{formatINR(LOTS247_SERVICE_VALUE)}</span>{' '}
+                          <strong className="text-text-primary">₹{formatINR(LOTS247_CUSTOMER_PRICE)}</strong>
+                        </li>
+                      )}
                     </ul>
                   </div>
                 </div>
@@ -1906,15 +1919,17 @@ function RoadSafetyBreakup({
           −₹{formatINR(rewardAmount)}
         </span>
       </div>
-      <div className="flex justify-between text-sm">
-        <span className="font-display font-semibold text-emerald-700 inline-flex items-center gap-1.5">
-          <Sparkles className="w-4 h-4" aria-hidden />
-          {serviceName}
-        </span>
-        <span className="font-display font-semibold text-emerald-700 tabular-nums">
-          −₹{formatINR(serviceOffer)}
-        </span>
-      </div>
+      {serviceOffer > 0 && (
+        <div className="flex justify-between text-sm">
+          <span className="font-display font-semibold text-emerald-700 inline-flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4" aria-hidden />
+            {serviceName}
+          </span>
+          <span className="font-display font-semibold text-emerald-700 tabular-nums">
+            −₹{formatINR(serviceOffer)}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

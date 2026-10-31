@@ -111,6 +111,7 @@ export const router = createBrowserRouter([
       { path: 'status', element: withSuspense(StatusPage) },
       { path: 'challan/:id', element: withSuspense(ChallanDetailsPage) },
       { path: 'payment', element: <RequireSelection>{withSuspense(PaymentPage)}</RequireSelection> },
+      { path: 'challan/nosubscription', element: <RequireSelection>{withSuspense(PaymentPage)}</RequireSelection> },
       { path: 'payment/completed', element: <RequireTransaction>{withSuspense(PaymentCompletedPage)}</RequireTransaction> },
     ],
   },
