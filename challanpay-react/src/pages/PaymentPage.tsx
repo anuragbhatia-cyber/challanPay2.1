@@ -330,9 +330,8 @@ export function PaymentPage() {
               </p>
             </div>
             <div className="flex-shrink-0 text-right">
-              <p className="text-xs font-semibold text-text-secondary leading-none">You saved</p>
-              <p className="font-display text-xl font-extrabold text-emerald-700 tabular-nums leading-tight mt-1">
-                ₹{formatINR(rewardAmount)}
+              <p className="font-display text-xl font-extrabold text-emerald-700 tabular-nums leading-tight">
+                -₹{formatINR(rewardAmount)}
               </p>
             </div>
           </div>
@@ -371,7 +370,7 @@ export function PaymentPage() {
                       ₹{formatINR(LOTS247_SERVICE_VALUE)}
                     </span>
                     <span className="font-display text-base font-extrabold text-emerald-700 tabular-nums leading-none">
-                      ₹{formatINR(LOTS247_CUSTOMER_PRICE)}
+                      -₹{formatINR(LOTS247_CUSTOMER_PRICE)}
                     </span>
                   </div>
                   <p className="font-body text-[13px] font-medium text-text-secondary leading-snug">
