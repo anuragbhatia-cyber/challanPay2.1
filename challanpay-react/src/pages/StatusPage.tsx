@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams, useNavigate } from 'react-router'
-import { Copy, Check, Clock, CircleCheck, ArrowRight, X, Coins, FileWarning, Gavel, Inbox, FilePlus2, Upload, FileText, Loader2, Info, Hourglass } from 'lucide-react'
+import { Copy, Check, CircleCheck, ArrowRight, X, Coins, FileWarning, Gavel, Inbox, FilePlus2, Upload, FileText, Loader2, Info, Hourglass, BadgeCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
@@ -24,6 +24,7 @@ interface PaidChallan {
   location: string
   type: 'online' | 'court'
   paidOn: string
+  paidViaChallanPay?: boolean
 }
 
 const MOCK_CHALLANS: Challan[] = [
@@ -38,14 +39,14 @@ const MOCK_CHALLANS: Challan[] = [
 ]
 
 const MOCK_PAID_CHALLANS: PaidChallan[] = [
-  { id: 'p1', challanNumber: 'DL04838230512114300', amount: 1000, violation: 'No Parking', date: '10 Jan 2023', location: 'Karol Bagh, Delhi', type: 'online', paidOn: '15 Mar 2023' },
+  { id: 'p1', challanNumber: 'DL04838230512114300', amount: 1000, violation: 'No Parking', date: '10 Jan 2023', location: 'Karol Bagh, Delhi', type: 'online', paidOn: '15 Mar 2023', paidViaChallanPay: true },
   { id: 'p2', challanNumber: 'UP32838230418114301', amount: 2000, violation: 'Signal Jump', date: '18 Feb 2023', location: 'Lucknow-Agra Expressway', type: 'online', paidOn: '22 Apr 2023' },
-  { id: 'p3', challanNumber: 'HR06838230320114302', amount: 5000, violation: 'Driving without valid insurance', date: '20 Mar 2023', location: 'Sohna Road, Gurgaon', type: 'court', paidOn: '10 May 2023' },
-  { id: 'p4', challanNumber: 'DL12838230225114303', amount: 1500, violation: 'Using mobile phone while driving', date: '25 Apr 2023', location: 'Dwarka, Delhi', type: 'online', paidOn: '30 Jun 2023' },
+  { id: 'p3', challanNumber: 'HR06838230320114302', amount: 5000, violation: 'Driving without valid insurance', date: '20 Mar 2023', location: 'Sohna Road, Gurgaon', type: 'court', paidOn: '10 May 2023', paidViaChallanPay: true },
+  { id: 'p4', challanNumber: 'DL12838230225114303', amount: 1500, violation: 'Using mobile phone while driving', date: '25 Apr 2023', location: 'Dwarka, Delhi', type: 'online', paidOn: '30 Jun 2023', paidViaChallanPay: true },
   { id: 'p5', challanNumber: 'UP80838230130114304', amount: 500, violation: 'No Helmet', date: '30 May 2023', location: 'Agra, UP', type: 'online', paidOn: '15 Jul 2023' },
-  { id: 'p6', challanNumber: 'HR26838230605114305', amount: 10000, violation: 'Drunk Driving', date: '05 Jun 2023', location: 'MG Road, Gurgaon', type: 'court', paidOn: '20 Aug 2023' },
+  { id: 'p6', challanNumber: 'HR26838230605114305', amount: 10000, violation: 'Drunk Driving', date: '05 Jun 2023', location: 'MG Road, Gurgaon', type: 'court', paidOn: '20 Aug 2023', paidViaChallanPay: true },
   { id: 'p7', challanNumber: 'DL09838230710114306', amount: 2500, violation: 'Overspeeding in school zone', date: '10 Jul 2023', location: 'Vasant Kunj, Delhi', type: 'online', paidOn: '05 Sep 2023' },
-  { id: 'p8', challanNumber: 'UP16838230815114307', amount: 1000, violation: 'Without Seatbelt', date: '15 Aug 2023', location: 'Noida Expressway', type: 'online', paidOn: '01 Oct 2023' },
+  { id: 'p8', challanNumber: 'UP16838230815114307', amount: 1000, violation: 'Without Seatbelt', date: '15 Aug 2023', location: 'Noida Expressway', type: 'online', paidOn: '01 Oct 2023', paidViaChallanPay: true },
 ]
 
 type Filter = 'all' | 'online' | 'court'
@@ -697,9 +698,9 @@ export function StatusPage() {
                         {/* Card Header */}
                         <div className="flex items-center justify-between gap-3 mb-3">
                           <span className="text-xs font-mono text-text-secondary">#{challan.challanNumber}</span>
-                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-700 whitespace-nowrap">
-                            <Clock className="w-3 h-3" />
-                            In Progress
+                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-primary bg-[#f7f7f7] px-2 py-0.5 rounded-full whitespace-nowrap">
+                            <BadgeCheck className="w-4 h-4 text-success" aria-hidden="true" />
+                            InProgress with ChallanPay
                           </span>
                         </div>
 
@@ -830,10 +831,16 @@ export function StatusPage() {
                       <hr className="border-border mt-4" />
 
                       {/* Paid on */}
-                      <div className="mt-3 flex items-center justify-between">
+                      <div className="mt-3 flex items-center justify-between gap-2">
                         <span className="text-xs text-emerald-700 font-semibold">
                           {t.status.paidOn} {challan.paidOn}
                         </span>
+                        {challan.paidViaChallanPay && (
+                          <span className="flex items-center gap-1 text-xs font-semibold text-text-primary bg-[#f7f7f7] px-2 py-0.5 rounded-full whitespace-nowrap">
+                            <BadgeCheck className="w-4 h-4 text-success" aria-hidden="true" />
+                            Paid on ChallanPay
+                          </span>
+                        )}
                       </div>
                     </div>
                   ))}
