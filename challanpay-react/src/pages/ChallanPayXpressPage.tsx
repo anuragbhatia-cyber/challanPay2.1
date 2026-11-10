@@ -122,7 +122,7 @@ const USE_CASE_TOPICS: UseCaseTopic[] = [
       'Pending court challan',
       'How to clear court challan',
     ],
-    image: '/images/blog-heading.webp',
+    image: '/images/xpress-court-challan-resolution.png',
     badge: { icon: Scale, label: 'Court Resolution' },
   },
   {
@@ -136,7 +136,7 @@ const USE_CASE_TOPICS: UseCaseTopic[] = [
       'Clear challan before RC transfer',
       'Vehicle sale with pending challan',
     ],
-    image: '/images/BLACK-CAR.png',
+    image: '/images/xpress-challan-before-vehicle-sale.png',
     badge: { icon: ShieldCheck, label: 'Safe Vehicle Sale' },
   },
   {
@@ -150,7 +150,7 @@ const USE_CASE_TOPICS: UseCaseTopic[] = [
       'Clear challan before RC transfer',
       'RC transfer paperwork',
     ],
-    image: '/images/CarInfo.png',
+    image: '/images/xpress-challan-rc-transfer.png',
     badge: { icon: FileText, label: 'RC Transfer' },
   },
   {
@@ -164,7 +164,7 @@ const USE_CASE_TOPICS: UseCaseTopic[] = [
       'Clear vehicle challan before insurance',
       'Insurance renewal with challan',
     ],
-    image: '/images/Blogs-img.png',
+    image: '/images/xpress-challan-insurance-renewal.png',
     badge: { icon: ShieldAlert, label: 'Insurance Renewal' },
   },
   {
@@ -178,7 +178,7 @@ const USE_CASE_TOPICS: UseCaseTopic[] = [
       'Fleet challan management',
       'Court challan for commercial vehicles',
     ],
-    image: '/images/91Trucks.png',
+    image: '/images/xpress-commercial-fleet.png',
     badge: { icon: Truck, label: 'Fleet Compliance' },
   },
 ]
