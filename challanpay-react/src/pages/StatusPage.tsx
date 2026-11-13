@@ -710,8 +710,8 @@ export function StatusPage() {
                         <div className="flex items-center justify-between gap-3 mb-3">
                           <span className="text-xs font-mono text-text-secondary">#{challan.challanNumber}</span>
                           <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-primary bg-[#f7f7f7] px-2 py-0.5 rounded-full whitespace-nowrap">
-                            <BadgeCheck className="w-4 h-4 text-amber-700" aria-hidden="true" />
-                            InProgress with ChallanPay
+                            <BadgeCheck className="w-4 h-4 text-success" aria-hidden="true" />
+                            Paid on ChallanPay
                           </span>
                         </div>
 
