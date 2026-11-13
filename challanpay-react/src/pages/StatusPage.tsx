@@ -38,6 +38,13 @@ const MOCK_CHALLANS: Challan[] = [
   { id: '8', challanNumber: 'DL05838230627114382', amount: 3000, violation: 'Overspeeding in restricted zone', date: '18 Jan 2024', location: 'Ring Road, near AIIMS, New Delhi', type: 'court', pendingSince: '16 months', expressEligible: false },
 ]
 
+// Challans already handed to ChallanPay before this session; numbers match track-status mocks so Track Status resolves.
+const MOCK_IN_PROGRESS_CHALLANS: ChallanItem[] = [
+  { id: 'ip1', challanNumber: 'UP4083823062711439', amount: 1000, violation: 'Jumping red light at signalised junction', date: '14 Feb 2024', location: 'Hazratganj Chauraha, Lucknow', type: 'online' },
+  { id: 'ip2', challanNumber: 'UP4083823062711440', amount: 2000, violation: 'Driving without valid pollution under control certificate', date: '02 Mar 2024', location: 'Gomti Nagar Extension, Lucknow', type: 'court' },
+  { id: 'ip3', challanNumber: 'DL06838230627114390', amount: 1500, violation: 'Wrong side driving', date: '19 Apr 2024', location: 'Lajpat Nagar, New Delhi', type: 'online' },
+]
+
 const MOCK_PAID_CHALLANS: PaidChallan[] = [
   { id: 'p1', challanNumber: 'DL04838230512114300', amount: 1000, violation: 'No Parking', date: '10 Jan 2023', location: 'Karol Bagh, Delhi', type: 'online', paidOn: '15 Mar 2023', paidViaChallanPay: true },
   { id: 'p2', challanNumber: 'UP32838230418114301', amount: 2000, violation: 'Signal Jump', date: '18 Feb 2023', location: 'Lucknow-Agra Expressway', type: 'online', paidOn: '22 Apr 2023' },
@@ -94,6 +101,10 @@ export function StatusPage() {
   const [newVehicleInput, setNewVehicleInput] = useState('')
   const [newVehicleError, setNewVehicleError] = useState('')
 
+  const inProgressChallans = useMemo(() => {
+    const ids = new Set(submittedChallans.map((c) => c.id))
+    return [...submittedChallans, ...MOCK_IN_PROGRESS_CHALLANS.filter((c) => !ids.has(c.id))]
+  }, [submittedChallans])
   const submittedIdSet = useMemo(() => new Set(submittedChallans.map((c) => c.id)), [submittedChallans])
 
   const allChallans = useMemo<Challan[]>(
@@ -348,7 +359,7 @@ export function StatusPage() {
                     'flex-shrink-0 text-[10px] md:text-xs font-bold px-1.5 md:px-2 py-0.5 rounded-full md:mr-7',
                     activeTab === 'in-progress' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-text-secondary'
                   )}>
-                    {submittedChallans.length}
+                    {inProgressChallans.length}
                   </span>
                 </button>
                 <button
@@ -671,16 +682,16 @@ export function StatusPage() {
                 {/* In Progress Challans Header */}
                 <div className="space-y-1">
                   <h2 className="font-display font-bold text-lg text-text-primary">
-                    {`${t.status.inProgressChallans} (${submittedChallans.length})`}
+                    {`${t.status.inProgressChallans} (${inProgressChallans.length})`}
                   </h2>
-                  {submittedChallans.length > 0 && (
+                  {inProgressChallans.length > 0 && (
                     <p className="text-sm text-text-secondary leading-snug">
                       {t.status.inProgressBanner}
                     </p>
                   )}
                 </div>
 
-                {submittedChallans.length === 0 ? (
+                {inProgressChallans.length === 0 ? (
                   <div className="bg-white rounded-2xl border border-border">
                     <EmptyState
                       icon={Hourglass}
@@ -690,7 +701,7 @@ export function StatusPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-36 md:pb-0">
-                    {submittedChallans.map((challan) => (
+                    {inProgressChallans.map((challan) => (
                       <div
                         key={challan.id}
                         className="bg-white rounded-xl border border-border shadow-sm p-5"
@@ -699,7 +710,7 @@ export function StatusPage() {
                         <div className="flex items-center justify-between gap-3 mb-3">
                           <span className="text-xs font-mono text-text-secondary">#{challan.challanNumber}</span>
                           <span className="inline-flex items-center gap-1 text-xs font-semibold text-text-primary bg-[#f7f7f7] px-2 py-0.5 rounded-full whitespace-nowrap">
-                            <BadgeCheck className="w-4 h-4 text-success" aria-hidden="true" />
+                            <BadgeCheck className="w-4 h-4 text-amber-700" aria-hidden="true" />
                             InProgress with ChallanPay
                           </span>
                         </div>
