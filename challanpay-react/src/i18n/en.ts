@@ -69,7 +69,7 @@ export const en = {
     step1Desc: 'Enter your vehicle number and mobile number to begin the process. Our system will instantly check for any pending challans.',
     step2Title: 'View pending challans for your Vehicle',
     step2Desc: 'Check all pending challans without visiting courts - fast, easy, and hassle-free. Review all details before making payment.',
-    step3Title: 'Settle challans easily with rewards',
+    step3Title: 'Settle challans Easily',
     step3Desc: 'Resolve and settle your challans easily online with rewards. Get instant confirmation and receipt for your payment. Keep track submitted challans till resolution.',
   },
 
